@@ -1,0 +1,55 @@
+# This file acts as the base configuration file for the project.
+# See configs/template.yaml for an example how to create a deviating configuration file
+# By default the config/user.yaml configuration file is used.
+
+# used for logging
+project_name: "template"
+
+# used for naming purposes
+note: "note"
+
+# the type of solution to run
+model_type: "model_template"
+
+# pretrained weights for given model should be in <project_root_dir>/<pretrained_weights>/weights.pth
+pretrained_weights: null
+
+model_flags:
+  flag1: True
+  flag2: False
+
+hyperparameters:
+  train:
+    batch_size: 4096
+    learning_rate: 0.001
+    weight_decay: 0
+    epochs: 100
+    save_every: 10
+  val:
+    batch_size: 4096
+    val_every: 20
+
+# device on which to train
+device: "cuda"
+
+# whether to resume training from earlier model
+resume_training: False
+
+# whether to use cached model
+use_cache_prediction: False
+
+# paths are relative from project_root_directory
+subpaths:
+  cache: "cache/"
+  logs: "logs/"
+  output: "output/"
+  resume_from: "path/to/weights"
+  data: "data/"
+
+  # environment tokens
+  # ...
+
+save_names:
+  weights: "weights.pth"
+  optimizer: "optimizer.pth"
+  pretrained_metadata: "pretrained_metadata.json"
