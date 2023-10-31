@@ -1,8 +1,22 @@
-# DeepLearningInit
-This is a repository for initializing deep learning projects.
+# GNN Deep Learning Project
+Repository for 2023 Deep Learning course project of
+[Oliver Lemke](https://github.com/oliver-lemke), [Phillip Nazari](), [Artiom Gesp](), [Davide Guidobene]()
+
+## Dependencies
+The main dependencies of this project are
+```yaml
+python: 3.9
+cuda: 11.8
+```
+
+You can set up a conda environment as follows :
+```bash
+git clone git@github.com:oliver-lemke/gnn_dl.git
+conda env create -f environment.yml
+```
 
 ## Overall Setup
-<pre>
+```
 project_root_dir/                                   <--- root directory of the project
 ├── source/                                         <--- all code stored here
 │   ├── main.py                                     <--- contains the main method
@@ -65,7 +79,7 @@ project_root_dir/                                   <--- root directory of the p
 ├── .gitignore                                      <--- global .gitignore
 ├── requirements.txt
 └── README.md
-</pre>
+```
 
 # GitHub Actions
 This project uses [black](https://pypi.org/project/black/) and
@@ -93,6 +107,3 @@ Plugin
       - Name: PyLint Watcher
       - Program: \$PyInterpreterDirectory\$/pylint
       - Arguments: --msg-template="\$FileDir\$/{path}:{line}:{column}:{C}:({symbol}){msg}" \$FilePath\$ --rcfile \$ProjectFileDir\$/pyproject.toml
-
-## VsCode setup
-TODO
