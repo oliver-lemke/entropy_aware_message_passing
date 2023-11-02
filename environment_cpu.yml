@@ -1,4 +1,4 @@
-name: gnn_dl
+name: gnn_dl_cpu
 channels:
     - defaults
     - pytorch
@@ -7,10 +7,9 @@ channels:
     - conda-forge
 dependencies:
     - python=3.9
-    - pytorch-cuda=11.8
-    - pytorch=2.1.0=py3.9_cuda11.8_cudnn8.7.0_0
+    - pytorch=2.1.0=py3.9_0
     - torchaudio=2.1.0
-    - pyg=2.4.0=py39_torch_2.1.0_cu118
+    - pyg=2.4.0=py39_torch_2.1.0_cpu
     - numpy=1.26.0
     - tqdm=4.66.1
     - pyyaml=6.0.1
