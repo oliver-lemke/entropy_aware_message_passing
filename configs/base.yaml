@@ -50,7 +50,7 @@ save_names:
   pretrained_metadata: "pretrained_metadata.json"
 
 wandb:
-  enable: False
+  enable: True
   entity: "gnn_dl"
   project: "Init Tests"
   group: "Start"
