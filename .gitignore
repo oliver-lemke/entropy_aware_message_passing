@@ -7,8 +7,8 @@ cache/**
 source/configs/user.yaml
 
 # ignote datasets (except README), logs, output
-data/*
-!data/**/README.md
+resources/data/*
+!resources/data/**/README.md
 logs/*
 /output/**
 
