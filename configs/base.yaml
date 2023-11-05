@@ -2,21 +2,21 @@
 # See configs/template.yaml for an example how to create a deviating configuration file
 # By default the config/user.yaml configuration file is used.
 
-# used for logging
-project_name: "template"
-
 # used for naming purposes
-note: "note"
+note: "init"
 
 # the type of solution to run
-model_type: "model_template"
+model_type: "basic_gcn"
+dataset: "planetoid"
 
-# pretrained weights for given model should be in <project_root_dir>/<pretrained_weights>/weights.pth
-pretrained_weights: null
+model_parameters:
+  basic_gcn:
+    pretrained_weights: null
+    hidden_dim: 16
 
-model_flags:
-  flag1: True
-  flag2: False
+dataset_parameters:
+  planetoid:
+    name: "Cora"
 
 hyperparameters:
   train:
@@ -35,21 +35,27 @@ device: "cuda"
 # whether to resume training from earlier model
 resume_training: False
 
-# whether to use cached model
-use_cache_prediction: False
-
 # paths are relative from project_root_directory
 subpaths:
-  cache: "cache/"
-  logs: "logs/"
-  output: "output/"
+  data: "resources/data/"
+  cache: "resources/cache/"
+  logs: "resources/logs/"
+  output: "resources/output/"
   resume_from: "path/to/weights"
-  data: "data/"
-
-  # environment tokens
-  # ...
+  pretrained_weights: "resources/pretrained_weights"
 
 save_names:
   weights: "weights.pth"
   optimizer: "optimizer.pth"
   pretrained_metadata: "pretrained_metadata.json"
+
+wandb:
+  enable: True
+  entity: "gnn_dl"
+  project: "Init Tests"
+  group: "Start"
+
+logging:
+  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  console: "DEBUG"
+  wandb: "DEBUG"
