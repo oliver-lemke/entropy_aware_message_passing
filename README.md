@@ -31,7 +31,7 @@ python -m main
 
 Overall project setup can be run with
 ```bash
-python -m script.setup_script
+python -m scripts.setup_script
 ```
 
 ## Overall Setup
