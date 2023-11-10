@@ -6,13 +6,36 @@
 note: "init"
 
 # the type of solution to run
-model_type: "basic_gcn"
+# can be any in ["basic_gcn", "hrnet_gcn"]
+model_type: "hrnet_gcn"
 dataset: "planetoid"
 
 model_parameters:
   basic_gcn:
     pretrained_weights: null
+    depth: 16
+  hrnet_gcn:
+    pretrained_weights: null
+    depth: 28
+    branches:
+      - 0
+      - 7
+      - 14
+      - 21
+
+conv_block_args:
+  block_type: "basic"
+  basic:
+    dropout_rate: 0.0
+fusion_block_args:
+  block_type: "sum"
+  sum: null
+transform_block_args:
+  block_type: "linear"
+  linear:
+    depth: 2
     hidden_dim: 16
+
 
 dataset_parameters:
   planetoid:
