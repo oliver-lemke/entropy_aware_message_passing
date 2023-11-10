@@ -17,9 +17,11 @@ model_parameters:
   basic_gcn:
     pretrained_weights: null
     depth: 16
+    hidden_dim: 16
   hrnet_gcn:
     pretrained_weights: null
     depth: 28
+    hidden_dim: 16
     branches:
       - 0
       - 7
@@ -29,14 +31,14 @@ model_parameters:
 conv_block_args:
   # can be in [basic_gcn]
   block_type: "basic_gcn"
-  basic:
+  basic_gcn:
     dropout_rate: 0.0
 fusion_block_args:
   # can be in [sum]
   block_type: "sum"
 transform_block_args:
-  # can be in [full]
-  block_type: "full"
+  # can be in [id, full]
+  block_type: "id"
   linear:
     depth: 2
     hidden_dim: 16
@@ -88,7 +90,7 @@ save_names:
   pretrained_metadata: "pretrained_metadata.json"
 
 wandb:
-  enable: True
+  enable: False
   entity: "gnn_dl"
   project: "Init Tests"
   group: "Start"

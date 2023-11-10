@@ -12,9 +12,13 @@ class HRNetGCN(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
         params = config["model_parameters"]["hrnet_gcn"]
-        hidden_dim = params["hidden_dim"]
+        self.hidden_dim = hidden_dim = params["hidden_dim"]
         self.depth = params["depth"]
-        self.branch_indices = params["branches"]
+        self.split_indices = params["branches"]
+
+        self.current_nr_branches = 1
+        self.bot_branch_idx = len(self.split_indices)
+        self.edge_index = None
 
         # get the different block types
         block_factory = BlockFactory()
@@ -27,17 +31,33 @@ class HRNetGCN(nn.Module):
             + [ConvBlock(hidden_dim, hidden_dim) for _ in range(self.depth - 2)]
             + [ConvBlock(hidden_dim, output_dim)]
         )
-        self.branch_networks = nn.ModuleDict()
+        self.transform_blocks = self._setup_transform_blocks(TransformBlock)
+        self.fusion_blocks = self._setup_fusion_blocks(FusionBlock)
         self.branch_tensors = {}
-
-        self.current_nr_branches = 1
-        self.bot_branch_idx = len(self.branch_indices)
-        self.edge_index = None
         logger.debug(str(self))
 
-    def _normal_step(self) -> None:
-        for idx, tensor in self.branch_tensors.items():
-            self.branch_tensors[idx] = self.branch_networks[idx](tensor)
+    def _setup_transform_blocks(self, TransformBlock) -> nn.ModuleDict:
+        transform_blocks = nn.ModuleDict()
+        for branch_index, split_index in enumerate(self.split_indices):
+            branch = nn.ModuleDict()
+            for depth in range(split_index, self.depth):
+                branch[str(depth)] = TransformBlock(self.hidden_dim, self.hidden_dim)
+            transform_blocks[str(branch_index)] = branch
+        return transform_blocks
+
+    def _setup_fusion_blocks(self, FusionBlock) -> nn.ModuleDict:
+        fusion_blocks = nn.ModuleDict()
+        for branch_index in range(1, self.bot_branch_idx):
+            branch = nn.ModuleDict()
+            for depth in self.split_indices[branch_index:]:
+                branch[str(depth)] = FusionBlock()
+            fusion_blocks[str(branch_index)] = branch
+        return fusion_blocks
+
+    def _normal_step(self, current_depth: int) -> None:
+        for branch_idx, tensor in self.branch_tensors.items():
+            network = self.branch_networks[branch_idx][current_depth]
+            self.branch_tensors[branch_idx] = network(tensor)
 
     def _branch(self):
         # use the current tensor from the lowest branch
@@ -47,15 +67,15 @@ class HRNetGCN(nn.Module):
         # increment current #branches
         self.current_nr_branches += 1
 
-    def _fuse(self) -> None:
+    def _fuse(self, current_depth: int) -> None:
         pass
 
     def forward(self, data):
         self.branches[self.bot_branch_idx] = data.x
         self.edge_index = data.edge_index
 
-        for idx, conv in enumerate(self.base_network):
-            if idx in self.branch_indices:
+        for current_depth, conv in range(self.depth):
+            if current_depth in self.split_indices:
                 self._branching_step()
             else:
                 self._normal_step()

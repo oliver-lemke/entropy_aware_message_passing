@@ -52,4 +52,16 @@ class Full(TransformBlock):
         return "full"
 
 
-BLOCK_DICT = {Class.get_name(): Class for Class in (Full,)}
+class Id(TransformBlock):
+    def __init__(self, input_dim: int, output_dim: int):
+        super().__init__()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x
+
+    @staticmethod
+    def get_name() -> str:
+        return "id"
+
+
+BLOCK_DICT = {Class.get_name(): Class for Class in (Full, Id)}
