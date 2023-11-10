@@ -7,6 +7,10 @@ logger = Logger()
 
 
 class BlockFactory:
+    """
+    Return the corresponding block class depending on the config
+    """
+
     def __init__(self):
         """
         Each entry should have 1 attribute:

@@ -24,14 +24,17 @@ model_parameters:
       - 21
 
 conv_block_args:
-  block_type: "basic"
+  # can be in [basic_gcn]
+  block_type: "basic_gcn"
   basic:
     dropout_rate: 0.0
 fusion_block_args:
+  # can be in [sum]
   block_type: "sum"
   sum: null
 transform_block_args:
-  block_type: "linear"
+  # can be in [full]
+  block_type: "full"
   linear:
     depth: 2
     hidden_dim: 16

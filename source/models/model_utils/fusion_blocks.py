@@ -15,8 +15,9 @@ fusion_block_args = config["fusion_block_args"]
 
 
 class FusionBlock(nn.Module):
-    def __init__(self):
-        super().__init__()
+    """
+    Model block used for fusing node representations.
+    """
 
     @abstractmethod
     def forward(
@@ -24,8 +25,17 @@ class FusionBlock(nn.Module):
     ) -> torch.Tensor:
         raise NotImplementedError()
 
+    @staticmethod
+    @abstractmethod
+    def get_name() -> str:
+        raise NotImplementedError()
+
 
 class SumFusion(FusionBlock):
+    """
+    Simply sums all inputs.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -35,5 +45,9 @@ class SumFusion(FusionBlock):
         concat_tensors = torch.stack(list(branch_tensors.values()), dim=-1)
         return torch.sum(concat_tensors, dim=-1)
 
+    @staticmethod
+    def get_name() -> str:
+        return "sum"
 
-BLOCK_DICT = {"sum": SumFusion}
+
+BLOCK_DICT = {Class.get_name(): Class for Class in (SumFusion,)}

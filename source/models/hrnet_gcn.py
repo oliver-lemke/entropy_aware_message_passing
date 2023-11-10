@@ -16,7 +16,7 @@ class HRNetGCN(nn.Module):
         self.depth = params["depth"]
         self.branch_indices = params["branches"]
 
-        # block args
+        # get the different block types
         block_factory = BlockFactory()
         ConvBlock = block_factory.get_conv_block()
         TransformBlock = block_factory.get_transform_block()
