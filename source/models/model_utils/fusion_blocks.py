@@ -50,4 +50,23 @@ class SumFusion(FusionBlock):
         return "sum"
 
 
-BLOCK_DICT = {Class.get_name(): Class for Class in (SumFusion,)}
+class MeanFusion(FusionBlock):
+    """
+    Simply sums all inputs.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(
+        self, branch_tensors: dict[str, torch.Tensor], this_index: int
+    ) -> torch.Tensor:
+        concat_tensors = torch.stack(list(branch_tensors.values()), dim=-1)
+        return torch.mean(concat_tensors, dim=-1)
+
+    @staticmethod
+    def get_name() -> str:
+        return "mean"
+
+
+BLOCK_DICT = {Class.get_name(): Class for Class in (SumFusion, MeanFusion)}

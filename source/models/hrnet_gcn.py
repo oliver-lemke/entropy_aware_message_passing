@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 
 from models.model_utils import BlockFactory
@@ -16,7 +17,6 @@ class HRNetGCN(nn.Module):
         self.depth = params["depth"]
         self.split_indices = params["branches"]
 
-        self.current_nr_branches = 1
         self.bot_branch_idx = len(self.split_indices)
         self.edge_index = None
 
@@ -33,7 +33,15 @@ class HRNetGCN(nn.Module):
         )
         self.transform_blocks = self._setup_transform_blocks(TransformBlock)
         self.fusion_blocks = self._setup_fusion_blocks(FusionBlock)
-        self.branch_tensors = {}
+
+        if 0 in self.split_indices:
+            middle_dim = (input_dim + hidden_dim) // 2
+            self.initial_projection_layer = nn.Sequential(
+                nn.Linear(input_dim, middle_dim),
+                nn.ReLU(),
+                nn.Linear(middle_dim, hidden_dim),
+            )
+
         logger.debug(str(self))
 
     def _setup_transform_blocks(self, TransformBlock) -> nn.ModuleDict:
@@ -47,37 +55,63 @@ class HRNetGCN(nn.Module):
 
     def _setup_fusion_blocks(self, FusionBlock) -> nn.ModuleDict:
         fusion_blocks = nn.ModuleDict()
-        for branch_index in range(1, self.bot_branch_idx):
+        # set up fusion for all the extra branches
+        for branch_index in range(self.bot_branch_idx):
             branch = nn.ModuleDict()
-            for depth in self.split_indices[branch_index:]:
+            for depth in self.split_indices[branch_index + 1 :]:
                 branch[str(depth)] = FusionBlock()
             fusion_blocks[str(branch_index)] = branch
+
+        # set up fusion for base branch
+        base_branch = nn.ModuleDict()
+        for depth in self.split_indices[1:]:
+            base_branch[str(depth)] = FusionBlock()
+        fusion_blocks[str(self.bot_branch_idx)] = base_branch
         return fusion_blocks
 
-    def _normal_step(self, current_depth: int) -> None:
-        for branch_idx, tensor in self.branch_tensors.items():
-            network = self.branch_networks[branch_idx][current_depth]
-            self.branch_tensors[branch_idx] = network(tensor)
+    def _normal_step(
+        self, tensors: dict[int, torch.Tensor], current_depth: int
+    ) -> dict[int, torch.Tensor]:
+        for branch_idx, tensor in tensors.items():
+            if branch_idx == self.bot_branch_idx:  # graph convolution
+                network = self.base_network[current_depth]
+                tensors[branch_idx] = network(tensor, self.edge_index)
+            else:  # transform
+                network = self.transform_blocks[str(branch_idx)][str(current_depth)]
+                tensors[branch_idx] = network(tensor)
+        return tensors
 
-    def _branch(self):
+    def _branch(
+        self, tensors: dict[int, torch.Tensor], current_depth: int
+    ) -> dict[int, torch.Tensor]:
         # use the current tensor from the lowest branch
-        bot_tensor = self.branch_tensors[self.bot_branch_idx]
+        new_branch_tensor = tensors[self.bot_branch_idx]
+        # if we branch before the first convolution, project down
+        if current_depth == 0:
+            new_branch_tensor = self.initial_projection_layer(new_branch_tensor)
         # put it into the next branching pathway
-        self.branch_tensors[self.current_nr_branches] = bot_tensor
+        current_nr_branches = len(tensors)
+        tensors[current_nr_branches - 1] = new_branch_tensor
         # increment current #branches
-        self.current_nr_branches += 1
+        return tensors
 
-    def _fuse(self, current_depth: int) -> None:
-        pass
+    def _fuse(
+        self, tensors: dict[int, torch.Tensor], current_depth: int
+    ) -> dict[int, torch.Tensor]:
+        for branch_idx in tensors:
+            network = self.fusion_blocks[str(branch_idx)][str(current_depth)]
+            tensors[branch_idx] = network(tensors, branch_idx)
+        return tensors
 
     def forward(self, data):
-        self.branches[self.bot_branch_idx] = data.x
+        tensors = {self.bot_branch_idx: data.x}
         self.edge_index = data.edge_index
 
-        for current_depth, conv in range(self.depth):
+        for current_depth in range(self.depth):
+            if current_depth in self.split_indices[1:]:
+                tensors = self._fuse(tensors, current_depth)
             if current_depth in self.split_indices:
-                self._branching_step()
-            else:
-                self._normal_step()
+                tensors = self._branch(tensors, current_depth)
+            tensors = self._normal_step(tensors, current_depth)
 
-        return self.branch_tensors[self.bot_branch_idx]
+        return tensors[self.bot_branch_idx]

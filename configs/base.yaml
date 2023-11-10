@@ -20,8 +20,8 @@ model_parameters:
     hidden_dim: 16
   hrnet_gcn:
     pretrained_weights: null
-    depth: 28
-    hidden_dim: 16
+    depth: 56
+    hidden_dim: 256
     branches:
       - 0
       - 7
@@ -34,14 +34,14 @@ conv_block_args:
   basic_gcn:
     dropout_rate: 0.0
 fusion_block_args:
-  # can be in [sum]
-  block_type: "sum"
+  # can be in [sum, mean]
+  block_type: "mean"
 transform_block_args:
   # can be in [id, full]
   block_type: "id"
   linear:
     depth: 2
-    hidden_dim: 16
+    hidden_dim: 256
 
 
 #######################################################################################
