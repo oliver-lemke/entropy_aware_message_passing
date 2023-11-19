@@ -6,13 +6,17 @@
 note: "init"
 
 # the type of solution to run
-model_type: "basic_gcn"
+model_type: "entropic_gcn"
 dataset: "planetoid"
 
 model_parameters:
   basic_gcn:
     pretrained_weights: null
     hidden_dim: 16
+  entropic_gcn:
+    pretrained_weights: null
+    hidden_dim: 16
+    temperature: 1
 
 dataset_parameters:
   planetoid:
@@ -30,7 +34,7 @@ hyperparameters:
     val_every: 20
 
 # device on which to train
-device: "cuda"
+device: "cpu"
 
 # whether to resume training from earlier model
 resume_training: False

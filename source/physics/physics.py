@@ -1,81 +1,103 @@
-import numpy as np
-from scipy.special import softmax
+import torch
 
 
 class Entropy:
-    def __init__(self, A, X, T):
+    def __init__(self, T, A=0):
         """ Class to handle the entropy of a given Graph
 
         Args:
-            A (np.array, shape NxN): Adjacency matrix
-            X (np.array, shape NxD): Graph embedding
+            A (torch.tensor, shape NxN): Adjacency matrix
+            X (torch.tensor, shape NxD): Graph embedding
             T (float): Temperature
         """
-        self.A = A
-        self.X = X
+
+        # TODO: implement everything with sparse matrices. Don't use adjacency matrix, but edge_index
+
+        # adjacency matrix
+        self.update_adj(A)
+
+        # temperature
         self.T = T
 
+    def update_adj(self, A):
+        """Update the adjacency matrix
+
+        Args:
+            A (torch.tensor, shape NxN): Adjacency matrix
+        """
+
+        self.A = A
+
         # given A, compute L
-        D = np.diag(np.sum(A, axis=0))
+        D = torch.diag(torch.sum(A, dim=0))
         self.L = D + A
 
-
-    def update(self, X):
-        self.X = X
-
-    def entropy(self):
+    def entropy(self, X):
         """Compute the entropy of the graph embedding X
 
         Returns:
             float: entropy of X
         """
-        energies = self.dirichlet_energy()
-        distribution = self.boltzmann_distribution()
-        S = -np.sum(distribution * np.log(distribution))
+
+        distribution = self.boltzmann_distribution(X)
+
+        S = -torch.sum(distribution * torch.log(distribution))
 
         return S
 
-    def dirichlet_energy(self):
+    def dirichlet_energy(self, X):
         """Comute Dirichlet Energie for graph embedding X
 
         Returns:
-            np.array, shape N: Dirichlet Energies for each node
+            torch.tensor, shape N: Dirichlet Energies for each node
         """
 
-        # for every row in X, compute the inner product with respect to L. Stack all of the inner products into a vector
+        res1 = torch.einsum("ij,ik,ik->i", self.A, X, X)
+        res2 = torch.einsum("ij,ik,jk->i", self.A, X, X)
+        res3 = torch.einsum("ij,jk,ik->i", self.A, X, X)
 
-        res1 = np.einsum("jk,ij,jk->i", self.X, self.L, self.X)
-        res2 = np.einsum("ik,ij,jk->i", self.X, self.A, self.X)
+        energies = 1/2*(res1 - 2 * res2 + res3)
 
-        energies = res1 - 2 * res2
+        # FIXME there are sometimes negative energies, which is mathematically impossible?!
+        # But, we should use sparse matrices anyways. Maybe then, if we just do ordinary matrix
+        # multiplication, we don't have this problem anymore?
+        # also, values are complete garbage
+        energies.clamp(min=1e-10)
 
+        # abbreviate this for loop using torch.einsum
         return energies
 
-    def boltzmann_distribution(self):
+    
+
+    def boltzmann_distribution(self, X):
         """Compute Boltzmann distribution
 
         Returns:
-            np.array, shape N: Boltzmann distribution given energies and temperature
+            torch.tensor, shape N: Boltzmann distribution given energies and temperature
         """
 
-        energies = self.dirichlet_energy()
+        # FIXME: right now, normalize with shape s.t. energies are non-zero
+        energies = self.dirichlet_energy(X)
 
-        return softmax(-energies / self.T)
+        # return softmax of energies scaled by temperature
+        distribution = torch.softmax(-energies / self.T, dim=0)
 
-    def Pbar(self):
-        P = self.boltzmann_distribution()
-        S = self.entropy()
-        P_bar = P * (S + np.log(P))
+        # this is a hack to avoid log(0) = -inf. x*ln(x) goes to 0 as x goes to 0, so this is okay
+        distribution += 1e-10
+        return distribution
+
+    def Pbar(self, X):
+        P = self.boltzmann_distribution(X)
+        S = self.entropy(X)
+        P_bar = P * (S + torch.log(P))
 
         return P_bar
 
-    def gradient_entropy(self):
-        P_bar = self.Pbar()
-        res1 = np.einsum("ij,ik,i->ik", self.A, self.X, P_bar)
-        res2 = np.einsum("ij,ik,j->ik", self.A, self.X, P_bar)
-        res3 = np.einsum("ij,jk,i->ik", self.A, self.X, P_bar)
-        res4 = np.einsum("ij,jk,j->ik", self.A, self.X, P_bar)
+    def gradient_entropy(self, X):
+        P_bar = self.Pbar(X)
+        res1 = torch.einsum("ij,ik,i->ik", self.A, X, P_bar)
+        res2 = torch.einsum("ij,ik,j->ik", self.A, X, P_bar)
+        res3 = torch.einsum("ij,jk,i->ik", self.A, X, P_bar)
+        res4 = torch.einsum("ij,jk,j->ik", self.A, X, P_bar)
 
-        grad = 1 / self.T * (res1 + res2 - res3 - res4)
-
-        return grad
+        return 1 / self.T * (res1 + res2 - res3 - res4)
