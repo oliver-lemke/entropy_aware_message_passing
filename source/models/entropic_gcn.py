@@ -15,8 +15,7 @@ class EntropicGCN(BasicGCN):
         params = config["model_parameters"]["entropic_gcn"]
 
         self.T = params["temperature"]
-        self.A = torch.randint(2, size=(2708, 2708), dtype=torch.float32)
-
+        self.A = None
         self.weight = params["weight"]
 
         # self.entropy = Entropy(params["temperature"], A=A)
@@ -27,6 +26,9 @@ class EntropicGCN(BasicGCN):
         Args:
             data (_type_): _description_
         """
+
+        if self.A is None:
+            self.A = tg.utils.to_dense_adj(data.edge_index)
 
         embedding = super().forward(data)
 
