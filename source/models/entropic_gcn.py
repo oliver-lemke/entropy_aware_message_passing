@@ -18,7 +18,11 @@ class EntropicGCN(BasicGCN):
         self.A = None
         self.weight = params["weight"]
 
-        # self.entropy = Entropy(params["temperature"], A=A)
+        # TODO
+        # 1. switch to efficient (sparse?) framework
+        # 2. once implemented, run tests whether this actually works
+        # 3. in particular, check if energies are potitive
+        # 4. maybe track the energy during training as a metric?!
 
     def forward(self, data):
         """Adjust forward pass to include gradient ascend on the entropy
@@ -28,7 +32,7 @@ class EntropicGCN(BasicGCN):
         """
 
         if self.A is None:
-            self.A = tg.utils.to_dense_adj(data.edge_index)
+            self.A = tg.utils.to_dense_adj(data.edge_index).squeeze()
 
         embedding = super().forward(data)
 
@@ -46,6 +50,15 @@ class EntropicGCN(BasicGCN):
         S = -torch.sum(distribution * torch.log(distribution))
 
         return S
+
+    def total_dirichlet_energy(self, X):
+        """Compute the total dirichlet energy of the graph embedding X
+
+        Args:
+            X (torch.tensor, shape NxN): graph embedding
+        """
+
+        return torch.sum(self.dirichlet_energy(X))
 
     def dirichlet_energy(self, X):
         """Comute Dirichlet Energie for graph embedding X
@@ -66,6 +79,8 @@ class EntropicGCN(BasicGCN):
         # also, values are complete garbage
         energies.clamp(min=1e-10)
 
+        print(f"energies: {torch.sum(~torch.isfinite(energies))}")
+
         # abbreviate this for loop using torch.einsum
         return energies
 
@@ -76,20 +91,26 @@ class EntropicGCN(BasicGCN):
             torch.tensor, shape N: Boltzmann distribution given energies and temperature
         """
 
-        # FIXME: right now, normalize with shape s.t. energies are non-zero
         energies = self.dirichlet_energy(X)
 
         # return softmax of energies scaled by temperature
-        distribution = torch.softmax(-energies / self.T, dim=0)
+        # adding an epsilon is a hack to avoid log(0) = -inf.
+        # x*ln(x) goes to 0 as x goes to 0, so this is okay
+        distribution = torch.softmax(-energies / self.T, dim=0) + 1e-10
 
-        # this is a hack to avoid log(0) = -inf. x*ln(x) goes to 0 as x goes to 0, so this is okay
-        distribution += 1e-10
         return distribution
 
     def Pbar(self, X):
         P = self.boltzmann_distribution(X)
         S = self.entropy(X)
         P_bar = P * (S + torch.log(P))
+
+        print(f"P: {torch.sum(~torch.isfinite(P))}")
+        print(f"S: {torch.sum(~torch.isfinite(S))}")
+        print(f"P_bar: {torch.sum(~torch.isfinite(P_bar))}")
+
+        if torch.sum(~torch.isfinite(S)) > 0:
+            print(torch.min(P), torch.max(P))
 
         return P_bar
 
