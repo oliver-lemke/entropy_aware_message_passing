@@ -113,16 +113,15 @@ class BaseTrainer:
         total_metrics = defaultdict(float)
         total_train, total_val = 0, 0
 
-        with torch.autograd.set_detect_anomaly(True):
-            for data in self.loader:
-                step_metrics, nr_train, nr_val = self.step(data)
+        for data in self.loader:
+            step_metrics, nr_train, nr_val = self.step(data)
 
-                for k in step_metrics.keys():
-                    total_metrics[k] += step_metrics[k]
-                total_train += nr_train
-                total_val += nr_val
+            for k in step_metrics.keys():
+                total_metrics[k] += step_metrics[k]
+            total_train += nr_train
+            total_val += nr_val
 
-            self.scheduler.step()
+        self.scheduler.step()
 
         total_metrics["loss"] = total_metrics["loss"] / total_train
         for k, v in total_metrics.items():

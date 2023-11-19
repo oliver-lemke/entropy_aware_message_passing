@@ -17,6 +17,7 @@ model_parameters:
     pretrained_weights: null
     hidden_dim: 16
     temperature: 1
+    weight: 0.001
 
 dataset_parameters:
   planetoid:
