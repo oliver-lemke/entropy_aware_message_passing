@@ -38,8 +38,8 @@ fusion_block_args:
   block_type: "mean"
 transform_block_args:
   # can be in [id, full]
-  block_type: "id"
-  linear:
+  block_type: "full"
+  full:
     depth: 2
     hidden_dim: 256
 
