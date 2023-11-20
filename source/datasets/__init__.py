@@ -1,5 +1,5 @@
+from datasets import faust, mnist, planetoid
 from datasets.base import BaseDataset
-from datasets.planetoid import PlanetoidDataset
 from utils.config import Config
 from utils.logs import Logger
 
@@ -9,7 +9,11 @@ logger = Logger()
 
 class DatasetFactory:
     def __init__(self):
-        self.datasets = {"planetoid": PlanetoidDataset}
+        self.datasets = {
+            "planetoid": planetoid.PlanetoidDataset,
+            "faust": faust.FaustDataset,
+            "mnist": mnist.MNISTDataset,
+        }
 
     def get_dataset(self, *args, **kwargs) -> BaseDataset:
         dataset_name = config["dataset"]

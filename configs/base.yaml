@@ -48,6 +48,7 @@ transform_block_args:
 ################################## DATASET PARAMETERS #################################
 #######################################################################################
 
+# can be in ["planetoid", "faust", "mnist"]
 dataset: "planetoid"
 dataset_parameters:
   planetoid:
@@ -64,7 +65,7 @@ hyperparameters:
     learning_rate: 0.001
     weight_decay: 0
     epochs: 100
-    save_every: 10
+    save_every: 50
   val:
     batch_size: 4096
     val_every: 20
