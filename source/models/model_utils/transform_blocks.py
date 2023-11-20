@@ -36,7 +36,7 @@ class Full(TransformBlock):
 
         self.layers = nn.ModuleList(
             [nn.Linear(input_dim, hidden_dim)]
-            + [nn.Linear(hidden_dim, hidden_dim) for _ in range(depth - 2)]
+            + [nn.Linear(hidden_dim, hidden_dim) for _ in range(depth - 1)]
         )
         self.act = nn.ReLU()
         self.output_layer = nn.Linear(hidden_dim, output_dim)

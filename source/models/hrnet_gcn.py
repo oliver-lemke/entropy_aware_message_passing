@@ -28,7 +28,7 @@ class HRNetGCN(nn.Module):
 
         self.base_network = nn.ModuleList(
             [ConvBlock(input_dim, hidden_dim)]
-            + [ConvBlock(hidden_dim, hidden_dim) for _ in range(self.depth - 2)]
+            + [ConvBlock(hidden_dim, hidden_dim) for _ in range(self.depth - 1)]
             + [ConvBlock(hidden_dim, output_dim)]
         )
         self.transform_blocks = self._setup_transform_blocks(TransformBlock)

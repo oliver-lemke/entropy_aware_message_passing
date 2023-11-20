@@ -34,8 +34,12 @@ conv_block_args:
   basic_gcn:
     dropout_rate: 0.0
 fusion_block_args:
-  # can be in [sum, mean]
-  block_type: "mean"
+  # can be in [sum, mean, max, simple_conv]
+  block_type: "simple_conv"
+  simple_conv:
+    residual: True
+    depth: 2
+    hidden_dim:  24
 transform_block_args:
   # can be in [id, full]
   block_type: "full"
