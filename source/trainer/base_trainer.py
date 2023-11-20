@@ -165,6 +165,7 @@ class BaseTrainer:
                 path = os.path.join(self.best_checkpoints_dir, path_ending)
                 self._clear_best_checkpoint_dir()
                 self._save_state(path)
+                self.best_checkpoint = False
 
             self._log(epoch, **epoch_metrics)
         self._close()
