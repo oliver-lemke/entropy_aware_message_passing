@@ -5,18 +5,58 @@
 # used for naming purposes
 note: "init"
 
+#######################################################################################
+################################### MODEL PARAMETERS ##################################
+#######################################################################################
+
 # the type of solution to run
-model_type: "basic_gcn"
-dataset: "planetoid"
+# can be any in ["basic_gcn", "hrnet_gcn"]
+model_type: "hrnet_gcn"
 
 model_parameters:
   basic_gcn:
     pretrained_weights: null
+    depth: 16
     hidden_dim: 16
+  hrnet_gcn:
+    pretrained_weights: null
+    depth: 56
+    hidden_dim: 256
+    branches:
+      - 0
+      - 7
+      - 14
+      - 21
 
+conv_block_args:
+  # can be in [basic_gcn]
+  block_type: "basic_gcn"
+  basic_gcn:
+    dropout_rate: 0.0
+fusion_block_args:
+  # can be in [sum, mean]
+  block_type: "mean"
+transform_block_args:
+  # can be in [id, full]
+  block_type: "id"
+  linear:
+    depth: 2
+    hidden_dim: 256
+
+
+#######################################################################################
+################################## DATASET PARAMETERS #################################
+#######################################################################################
+
+dataset: "planetoid"
 dataset_parameters:
   planetoid:
     name: "Cora"
+
+
+#######################################################################################
+######################################## OTHER ########################################
+#######################################################################################
 
 hyperparameters:
   train:
@@ -50,7 +90,7 @@ save_names:
   pretrained_metadata: "pretrained_metadata.json"
 
 wandb:
-  enable: True
+  enable: False
   entity: "gnn_dl"
   project: "Init Tests"
   group: "Start"
