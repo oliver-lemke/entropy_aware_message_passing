@@ -35,18 +35,46 @@ def test_physics():
     E = Entropy(T, A=A)
 
     # test dirichlet energy
-    res = []
+    result = []
     for i in range(n):
         sum = 0
         for j in range(n):
             sum += L[i, j] * X[j] @ X[j] - 2 * A[i, j] * X[i] @ X[j]
 
-        res.append(sum)
+        result.append(sum)
 
-    res = 1/2*torch.stack(res)
+    result = 1/2*torch.stack(result)
 
-    assert torch.allclose(res, E.dirichlet_energy(X))
+    result2 = []
+    for i in range(n):
+        sum = 0
+        for j in range(n):
+            sum += A[i, j] * X[i] @ X[i] - 2 * A[i, j] * X[i] @ X[j] + A[i, j] * X[j] @ X[j]
+
+        result2.append(sum)
+
+    result2 = 1/2*torch.stack(result2)
+
+    res1 = torch.einsum("jk,ij,jk->i", X, L, X)
+    res2 = torch.einsum("ik,ij,jk->i", X, A, X)
+    energies = 1/2*(res1 - 2 * res2)
+
+    res1 = torch.einsum("ij,ik,ik->i", A, X, X)
+    res2 = torch.einsum("ij,ik,jk->i", A, X, X)
+    res3 = torch.einsum("ij,jk,jk->i", A, X, X)
+    energies2 = 1/2*(res1 - 2 * res2 + res3)
+
+    assert torch.allclose(result, energies)  # E.dirichlet_energy(X)
     print("DIRICHLET ENERGY: TEST PASSED!")
+
+    assert torch.allclose(result2, energies2)
+    print("DIRICHLET ENERGY 2: TEST PASSED!")
+
+
+    print(torch.sum(result < 0), torch.sum(result2 < 0), torch.sum(energies < 0), torch.sum(energies2 < 0))
+
+    assert torch.allclose(result, result2)
+    print("DIRICHLET ENERGY 3: TEST PASSED!")
 
     # test entropy gradient
     res = []

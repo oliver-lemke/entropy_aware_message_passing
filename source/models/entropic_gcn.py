@@ -69,19 +69,23 @@ class EntropicGCN(BasicGCN):
 
         res1 = torch.einsum("ij,ik,ik->i", self.A, X, X)
         res2 = torch.einsum("ij,ik,jk->i", self.A, X, X)
-        res3 = torch.einsum("ij,jk,ik->i", self.A, X, X)
+        res3 = torch.einsum("ij,jk,jk->i", self.A, X, X)
 
         energies = 1 / 2 * (res1 - 2 * res2 + res3)
 
-        # FIXME there are sometimes negative energies, which is mathematically impossible?!
-        # But, we should use sparse matrices anyways. Maybe then, if we just do ordinary matrix
-        # multiplication, we don't have this problem anymore?
-        # also, values are complete garbage
+        # print(torch.sum(energies < 0))
+        # print(energies[torch.where(energies < 0)])
+        # print(res1[torch.where(energies < 0)])
+        # print(res2[torch.where(energies < 0)])
+        # print(res3[torch.where(energies < 0)])
+
+        # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
+        # FIXME still, not sure why this is happening. We should see whether this issue goes away
+        # with sparse matrices
         energies.clamp(min=1e-10)
 
-        print(f"energies: {torch.sum(~torch.isfinite(energies))}")
+        # print(f"energies: {torch.sum(~torch.isfinite(energies))}")
 
-        # abbreviate this for loop using torch.einsum
         return energies
 
     def boltzmann_distribution(self, X):
@@ -105,9 +109,9 @@ class EntropicGCN(BasicGCN):
         S = self.entropy(X)
         P_bar = P * (S + torch.log(P))
 
-        print(f"P: {torch.sum(~torch.isfinite(P))}")
-        print(f"S: {torch.sum(~torch.isfinite(S))}")
-        print(f"P_bar: {torch.sum(~torch.isfinite(P_bar))}")
+        # print(f"P: {torch.sum(~torch.isfinite(P))}")
+        # print(f"S: {torch.sum(~torch.isfinite(S))}")
+        # print(f"P_bar: {torch.sum(~torch.isfinite(P_bar))}")
 
         if torch.sum(~torch.isfinite(S)) > 0:
             print(torch.min(P), torch.max(P))

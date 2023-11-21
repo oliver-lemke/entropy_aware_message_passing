@@ -54,7 +54,7 @@ class Entropy:
 
         res1 = torch.einsum("ij,ik,ik->i", self.A, X, X)
         res2 = torch.einsum("ij,ik,jk->i", self.A, X, X)
-        res3 = torch.einsum("ij,jk,ik->i", self.A, X, X)
+        res3 = torch.einsum("ij,jk,jk->i", self.A, X, X)
 
         energies = 1/2*(res1 - 2 * res2 + res3)
 
@@ -63,6 +63,10 @@ class Entropy:
         # multiplication, we don't have this problem anymore?
         # also, values are complete garbage
         energies.clamp(min=1e-10)
+
+        #res1 = torch.einsum("jk,ij,jk->i", X, self.L, X)
+        #res2 = torch.einsum("ik,ij,jk->i", X, self.A, X)
+        #energies = 1/2*(res1 - 2 * res2)
 
         # abbreviate this for loop using torch.einsum
         return energies
