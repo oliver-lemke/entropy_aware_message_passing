@@ -123,7 +123,7 @@ class SimpleConvFusion(FusionBlock):
         self.has_been_initialized = True
 
     def forward(
-        self, branch_tensors: dict[str, torch.Tensor], this_index: int
+        self, branch_tensors: dict[int, torch.Tensor], this_index: int
     ) -> torch.Tensor:
         if not self.has_been_initialized:
             self._custom_init(len(branch_tensors))
@@ -133,10 +133,13 @@ class SimpleConvFusion(FusionBlock):
         for layer in self.layers:
             x = layer(x)
             x = self.act(x)
+        x = self.output_layer(x)
+        x = x.squeeze()
 
         if self.residual:
-            x = x + branch_tensors[str(this_index)]
-        return self.output_layer(x)
+            x = x + branch_tensors[this_index]
+
+        return x
 
     @staticmethod
     def get_name() -> str:

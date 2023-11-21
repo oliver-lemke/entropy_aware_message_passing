@@ -16,17 +16,17 @@ model_type: "hrnet_gcn"
 model_parameters:
   basic_gcn:
     pretrained_weights: null
-    depth: 16
-    hidden_dim: 16
+    depth: 2
+    hidden_dim: 256
   hrnet_gcn:
     pretrained_weights: null
-    depth: 56
+    depth: 24
     hidden_dim: 256
     branches:
       - 0
-      - 7
-      - 14
-      - 21
+      - 8
+      - 16
+      - 24
 
 conv_block_args:
   # can be in [basic_gcn]
@@ -35,17 +35,17 @@ conv_block_args:
     dropout_rate: 0.0
 fusion_block_args:
   # can be in [sum, mean, max, simple_conv]
-  block_type: "simple_conv"
+  block_type: "mean"
   simple_conv:
     residual: True
-    depth: 2
-    hidden_dim:  24
+    depth: 1
+    hidden_dim:  16
 transform_block_args:
   # can be in [id, full]
-  block_type: "full"
+  block_type: "id"
   full:
     depth: 2
-    hidden_dim: 256
+    hidden_dim: 128
 
 
 #######################################################################################
@@ -68,7 +68,7 @@ hyperparameters:
     batch_size: 4096
     learning_rate: 0.001
     weight_decay: 0
-    epochs: 100
+    epochs: 1000
     save_every: 50
   val:
     batch_size: 4096
@@ -95,10 +95,10 @@ save_names:
   pretrained_metadata: "pretrained_metadata.json"
 
 wandb:
-  enable: False
+  enable: True
   entity: "gnn_dl"
   project: "Init Tests"
-  group: "Start"
+  group: null
 
 logging:
   # DEBUG, INFO, WARNING, ERROR, CRITICAL
