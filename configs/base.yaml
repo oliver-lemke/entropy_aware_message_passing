@@ -28,24 +28,33 @@ model_parameters:
       - 16
       - 24
 
+# can be in [basic_gcn]
 conv_block_args:
-  # can be in [basic_gcn]
   block_type: "basic_gcn"
   basic_gcn:
     dropout_rate: 0.0
+# can be in [sum, mean, max, simple_conv]
 fusion_block_args:
-  # can be in [sum, mean, max, simple_conv]
   block_type: "mean"
   simple_conv:
     residual: True
     depth: 1
     hidden_dim:  16
+# can be in [id, full]
 transform_block_args:
-  # can be in [id, full]
   block_type: "id"
   full:
     depth: 2
     hidden_dim: 128
+# can be in [single, sum, mean, max, simple_conv]
+output_block_args:
+  block_type: "mean"
+  single:
+    branch_index: -1
+  simple_conv:
+    residual: True
+    depth: 1
+    hidden_dim:  16
 
 
 #######################################################################################

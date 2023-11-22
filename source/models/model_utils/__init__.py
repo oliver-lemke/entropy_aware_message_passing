@@ -1,4 +1,9 @@
-from models.model_utils import conv_blocks, fusion_blocks, transform_blocks
+from models.model_utils import (
+    conv_blocks,
+    fusion_blocks,
+    output_blocks,
+    transform_blocks,
+)
 from utils.config import Config
 from utils.logs import Logger
 
@@ -19,6 +24,7 @@ class BlockFactory:
         self.conv_blocks = conv_blocks.BLOCK_DICT
         self.fusion_blocks = fusion_blocks.BLOCK_DICT
         self.transform_blocks = transform_blocks.BLOCK_DICT
+        self.output_blocks = output_blocks.BLOCK_DICT
 
     def get_conv_block(self):
         """
@@ -40,3 +46,10 @@ class BlockFactory:
         """
         transform_block_name = config["transform_block_args"]["block_type"]
         return self.transform_blocks[transform_block_name]
+
+    def get_output_block(self):
+        """
+        Returns output block class
+        """
+        output_block_name = config["output_block_args"]["block_type"]
+        return self.output_blocks[output_block_name]
