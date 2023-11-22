@@ -11,7 +11,7 @@ note: "init"
 
 # the type of solution to run
 # can be any in ["basic_gcn", "hrnet_gcn"]
-model_type: "hrnet_gcn"
+model_type: "basic_gcn"
 
 model_parameters:
   basic_gcn:
@@ -24,9 +24,17 @@ model_parameters:
     hidden_dim: 256
     branches:
       - 0
+      - 2
+      - 4
+      - 6
       - 8
+      - 10
+      - 12
+      - 14
       - 16
-      - 24
+      - 18
+      - 20
+      - 22
 
 # can be in [basic_gcn]
 conv_block_args:
@@ -35,25 +43,25 @@ conv_block_args:
     dropout_rate: 0.0
 # can be in [sum, mean, max, simple_conv]
 fusion_block_args:
-  block_type: "mean"
+  block_type: "simple_conv"
   simple_conv:
-    residual: True
-    depth: 1
+    depth: 2
     hidden_dim:  16
+    residual: True
 # can be in [id, full]
 transform_block_args:
-  block_type: "id"
+  block_type: "full"
   full:
     depth: 2
     hidden_dim: 128
+    residual: True
 # can be in [single, sum, mean, max, simple_conv]
 output_block_args:
   block_type: "mean"
   single:
-    branch_index: -1
+    branch_index: 0
   simple_conv:
-    residual: True
-    depth: 1
+    depth: 2
     hidden_dim:  16
 
 
@@ -77,11 +85,10 @@ hyperparameters:
     batch_size: 4096
     learning_rate: 0.001
     weight_decay: 0
-    epochs: 1000
-    save_every: 50
+    epochs: 100
+    save_every: 100
   val:
     batch_size: 4096
-    val_every: 20
 
 # device on which to train
 device: "cuda"

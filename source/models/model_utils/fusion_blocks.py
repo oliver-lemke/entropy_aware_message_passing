@@ -117,6 +117,7 @@ class SimpleConvFusion(FusionBlock):
             + [nn.Linear(hidden_dim, hidden_dim) for _ in range(depth - 1)]
         )
         self.act = nn.ReLU()
+        self.norm = nn.LayerNorm(hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, 1)
 
         self.to(torch.device(config["device"]))
@@ -133,6 +134,7 @@ class SimpleConvFusion(FusionBlock):
         for layer in self.layers:
             x = layer(x)
             x = self.act(x)
+            x = self.norm(x)
         x = self.output_layer(x)
         x = x.squeeze()
 
