@@ -103,13 +103,6 @@ class EntropicGCN(BasicGCN):
         S = self.entropy(X)
         P_bar = P * (S + torch.log(P))
 
-        # print(f"P: {torch.sum(~torch.isfinite(P))}")
-        # print(f"S: {torch.sum(~torch.isfinite(S))}")
-        # print(f"P_bar: {torch.sum(~torch.isfinite(P_bar))}")
-
-        # if torch.sum(~torch.isfinite(S)) > 0:
-        #    print(torch.min(P), torch.max(P))
-
         return P_bar
 
     def gradient_entropy(self, X):
