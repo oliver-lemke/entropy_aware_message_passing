@@ -6,7 +6,7 @@
 note: "init"
 
 # the type of solution to run
-model_type: "entropic_gcn"
+model_type: "free_energy_gcn"
 dataset: "planetoid"
 
 model_parameters:
@@ -18,6 +18,12 @@ model_parameters:
     hidden_dim: 16
     temperature: 1
     weight: 0.001
+  free_energy_gcn:
+    pretrained_weights: null
+    hidden_dim: 16
+    temperature: 1
+    weight: 0.001
+
 
 dataset_parameters:
   planetoid:
