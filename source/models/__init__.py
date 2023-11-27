@@ -3,7 +3,7 @@ import os.path
 import torch
 
 from models.basic_gcn import BasicGCN
-from models.hrnet_gcn import HRNetGCN
+from models.entropic_gcn import EntropicGCN
 from utils.config import Config
 from utils.logs import Logger
 
@@ -17,7 +17,7 @@ class ModelFactory:
         Each entry should have 1 attribute:
         (1) A function for the model constructor
         """
-        self.models = {"basic_gcn": BasicGCN, "hrnet_gcn": HRNetGCN}
+        self.models = {"basic_gcn": BasicGCN, "entropic_gcn": EntropicGCN}
 
     def get_model(self, *args, **kwargs):
         """
