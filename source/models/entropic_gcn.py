@@ -73,12 +73,6 @@ class EntropicGCN(BasicGCN):
 
         energies = 1 / 2 * (res1 - 2 * res2 + res3)
 
-        # print(torch.sum(energies < 0))
-        # print(energies[torch.where(energies < 0)])
-        # print(res1[torch.where(energies < 0)])
-        # print(res2[torch.where(energies < 0)])
-        # print(res3[torch.where(energies < 0)])
-
         # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
         # FIXME still, not sure why this is happening. We should see whether this issue goes away
         # with sparse matrices
@@ -113,8 +107,8 @@ class EntropicGCN(BasicGCN):
         # print(f"S: {torch.sum(~torch.isfinite(S))}")
         # print(f"P_bar: {torch.sum(~torch.isfinite(P_bar))}")
 
-        if torch.sum(~torch.isfinite(S)) > 0:
-            print(torch.min(P), torch.max(P))
+        # if torch.sum(~torch.isfinite(S)) > 0:
+        #    print(torch.min(P), torch.max(P))
 
         return P_bar
 
@@ -125,4 +119,26 @@ class EntropicGCN(BasicGCN):
         res3 = torch.einsum("ij,jk,i->ik", self.A, X, P_bar)
         res4 = torch.einsum("ij,jk,j->ik", self.A, X, P_bar)
 
-        return 1 / self.T * (res1 + res2 - res3 - res4)
+        result = 1 / self.T * (res1 + res2 - res3 - res4)
+
+        """
+        print(result)
+        test = self.Pbar(X)
+
+        res = []
+        for i in range(X.shape[0]):
+            sum = 0
+            for j in range(X.shape[0]):
+                contrib = (
+                    self.A[i, j] * X[i] * test[i]
+                    + self.A[i, j] * X[i] * test[j]
+                    - self.A[i, j] * X[j] * test[i]
+                    - self.A[i, j] * X[j] * test[j]
+                )
+                sum += contrib
+            res.append(sum)
+
+            print(1 / self.T * sum)
+        """
+
+        return result
