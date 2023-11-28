@@ -3,6 +3,7 @@ File is used for training the actual model.
 """
 import json
 import os
+import random
 import shutil
 from collections import defaultdict
 
@@ -47,9 +48,38 @@ class BaseTrainer:
                 id=self.id,
             )
 
+        self.seed()
         self.prepare_loaders()
         self.build_model()
         self.writer = SummaryWriter(log_dir=self.tensorboard_dir)
+
+    def seed(self):
+        """
+        Set seeds for reproducibility.
+        """
+        seed = config["seed"]
+
+        # Python's built-in random module
+        random.seed(seed)
+
+        # NumPy
+        np.random.seed(seed)
+
+        # PyTorch
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+
+        # PyTorch Geometric (if necessary)
+        # PyG does not have a specific seed setting, but it relies on PyTorch
+
+        # Ensuring that PyTorch behaves deterministically (may impact performance)
+        # Uncomment if deterministic behavior is required
+        # torch.backends.cudnn.deterministic = True
+        # torch.backends.cudnn.benchmark = False
+
+        # Setting seed for Python's 'os' module for file-system related operations
+        os.environ["PYTHONHASHSEED"] = str(seed)
 
     def prepare_loaders(self):
         logger.info("Preparing dataloaders")

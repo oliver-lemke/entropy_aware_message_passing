@@ -119,7 +119,7 @@ class Config:
     def get_name_stem(self) -> str:
         name = self._config["model_type"]
         note = self._build_note()
-        name_stem = f"model_{name}_{note}___{self.timestamp}"
+        name_stem = f"{name}_{note}__{self.timestamp}"
         return name_stem
 
     def __getitem__(self, item):
