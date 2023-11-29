@@ -18,6 +18,7 @@ model_parameters:
     hidden_dim: 16
     temperature: 1
     weight: 0.001
+    normalize_energies: True
 
 dataset_parameters:
   planetoid:

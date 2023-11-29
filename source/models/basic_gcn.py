@@ -12,10 +12,10 @@ class BasicGCN(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(BasicGCN, self).__init__()
         params = config["model_parameters"]["basic_gcn"]
-        hidden_dim = params["hidden_dim"]
+        self.hidden_dim = params["hidden_dim"]
 
-        self.conv1 = tnn.GCNConv(input_dim, hidden_dim)
-        self.conv2 = tnn.GCNConv(hidden_dim, output_dim)
+        self.conv1 = tnn.GCNConv(input_dim, self.hidden_dim)
+        self.conv2 = tnn.GCNConv(self.hidden_dim, output_dim)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout()
         self.log_softmax = nn.LogSoftmax(dim=1)
