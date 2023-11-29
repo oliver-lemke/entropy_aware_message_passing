@@ -3,6 +3,8 @@ File is used for training the actual model.
 """
 import json
 import os
+import random
+import shutil
 from collections import defaultdict
 
 import numpy as np
@@ -33,6 +35,7 @@ class BaseTrainer:
         self.input_dim = -1
         self.output_dim = -1
         self.prev_val_loss = np.infty
+        self.best_checkpoint = False
 
         self._make_output_dir()
         if config["wandb"]["enable"]:
@@ -45,9 +48,38 @@ class BaseTrainer:
                 id=self.id,
             )
 
+        self.seed()
         self.prepare_loaders()
         self.build_model()
         self.writer = SummaryWriter(log_dir=self.tensorboard_dir)
+
+    def seed(self):
+        """
+        Set seeds for reproducibility.
+        """
+        seed = config["seed"]
+
+        # Python's built-in random module
+        random.seed(seed)
+
+        # NumPy
+        np.random.seed(seed)
+
+        # PyTorch
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+
+        # PyTorch Geometric (if necessary)
+        # PyG does not have a specific seed setting, but it relies on PyTorch
+
+        # Ensuring that PyTorch behaves deterministically (may impact performance)
+        # Uncomment if deterministic behavior is required
+        # torch.backends.cudnn.deterministic = True
+        # torch.backends.cudnn.benchmark = False
+
+        # Setting seed for Python's 'os' module for file-system related operations
+        os.environ["PYTHONHASHSEED"] = str(seed)
 
     def prepare_loaders(self):
         logger.info("Preparing dataloaders")
@@ -98,12 +130,22 @@ class BaseTrainer:
             train_metrics = metrics(pred[data.train_mask], data.y[data.train_mask])
             val_metrics = metrics(pred[data.val_mask], data.y[data.val_mask])
 
-        # make ready for return
-        train_metrics = {f"train_{k}": v for k, v in train_metrics.items()}
-        val_metrics = {f"val_{k}": v for k, v in val_metrics.items()}
-        full_metrics = {"loss": loss.item(), **train_metrics, **val_metrics}
+            val_loss = self.loss(pred[data.val_mask], data.y[data.val_mask])
+            val_metrics["total_loss"] = val_loss.item()
+            if val_loss < self.prev_val_loss:
+                self.prev_val_loss = val_loss
+                self.best_checkpoint = True
 
-        return full_metrics, len(data.train_mask), len(data.val_mask)
+        # make ready for return
+        train_metrics = {f"train/{k}": v for k, v in train_metrics.items()}
+        val_metrics = {f"val/{k}": v for k, v in val_metrics.items()}
+        full_metrics = {"train/total_loss": loss.item(), **train_metrics, **val_metrics}
+
+        return (
+            full_metrics,
+            torch.sum(data.train_mask).item(),
+            torch.sum(data.val_mask).item(),
+        )
 
     def one_epoch(self, epoch):
         logger.info(
@@ -123,11 +165,10 @@ class BaseTrainer:
 
         self.scheduler.step()
 
-        total_metrics["loss"] = total_metrics["loss"] / total_train
         for k, v in total_metrics.items():
-            if k.startswith("train_"):
+            if k.startswith("train/"):
                 total_metrics[k] = v / total_train
-            elif k.startswith("val_"):
+            elif k.startswith("val/"):
                 total_metrics[k] = v / total_val
         return total_metrics
 
@@ -150,9 +191,15 @@ class BaseTrainer:
         for epoch in range(1, config["hyperparameters"]["train"]["epochs"] + 1):
             epoch_metrics = self.one_epoch(epoch)
 
+            path_ending = f"epoch_{epoch}"
             if epoch % config["hyperparameters"]["train"]["save_every"] == 0:
-                path = os.path.join(self.checkpoints_dir, f"epoch_{epoch}")
+                path = os.path.join(self.checkpoints_dir, path_ending)
                 self._save_state(path)
+            if self.best_checkpoint:
+                path = os.path.join(self.best_checkpoints_dir, path_ending)
+                self._clear_best_checkpoint_dir()
+                self._save_state(path)
+                self.best_checkpoint = False
 
             self._log(epoch, **epoch_metrics)
         self._close()
@@ -174,6 +221,16 @@ class BaseTrainer:
         os.makedirs(self.best_checkpoints_dir, exist_ok=False)
         os.makedirs(self.tensorboard_dir, exist_ok=False)
         os.makedirs(self.wandb_dir, exist_ok=False)
+
+    def _clear_best_checkpoint_dir(self):
+        directory_path = self.best_checkpoints_dir
+        if os.path.exists(directory_path):
+            for item in os.listdir(directory_path):
+                item_path = os.path.join(directory_path, item)
+                if os.path.isfile(item_path):
+                    os.remove(item_path)
+                elif os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
 
     def _save_state(self, path):
         os.makedirs(path, exist_ok=True)
