@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import os
 import re
+import warnings
 
 import git
 import yaml
@@ -14,7 +15,16 @@ class Config:
     Has some useful functions for ease of use.
     """
 
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(Config, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, file=None):
+        if hasattr(self, "_initialized"):
+            return
         self.timestamp = datetime.datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
 
         if file is None:
@@ -43,6 +53,7 @@ class Config:
 
         self._config = load_recursive(file, [])
         self._add_additional_info()
+        self.initialized = True
 
     def _add_additional_info(self) -> None:
         additions = {}
@@ -108,13 +119,14 @@ class Config:
     def get_name_stem(self) -> str:
         name = self._config["model_type"]
         note = self._build_note()
-        name_stem = f"model_{name}_{note}___{self.timestamp}"
+        name_stem = f"{name}_{note}__{self.timestamp}"
         return name_stem
 
     def __getitem__(self, item):
         return self._config.__getitem__(item)
 
     def __setitem__(self, key, value):
+        warnings.warn(f"Global config file set manually to {key}={value}!")
         return self._config.__setitem__(key, value)
 
     def get(self, key, default=None):

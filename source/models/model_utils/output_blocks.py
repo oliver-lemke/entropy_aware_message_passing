@@ -11,18 +11,16 @@ from utils.logs import Logger
 config = Config()
 logger = Logger()
 
-fusion_block_args = config["fusion_block_args"]
+output_block_args = config["output_block_args"]
 
 
-class FusionBlock(nn.Module):
+class OutputBlock(nn.Module):
     """
     Model block used for fusing node representations.
     """
 
     @abstractmethod
-    def forward(
-        self, branch_tensors: dict[str, torch.Tensor], this_index: int
-    ) -> torch.Tensor:
+    def forward(self, branch_tensors: dict[int, torch.Tensor]) -> torch.Tensor:
         raise NotImplementedError()
 
     @staticmethod
@@ -31,7 +29,22 @@ class FusionBlock(nn.Module):
         raise NotImplementedError()
 
 
-class SumFusion(FusionBlock):
+class SingleBranch(OutputBlock):
+    def __init__(self, *args, **kwargs):
+        logger.debug(f"Unused {args=}, {kwargs=}")
+        self.params = output_block_args[self.get_name()]
+        self.branch_index = self.params["branch_index"]
+        super().__init__(*args, **kwargs)
+
+    def forward(self, branch_tensors: dict[int, torch.Tensor]) -> torch.Tensor:
+        return branch_tensors[self.branch_index]
+
+    @staticmethod
+    def get_name() -> str:
+        return "single"
+
+
+class SumOutput(OutputBlock):
     """
     Simply sums all inputs.
     """
@@ -40,9 +53,7 @@ class SumFusion(FusionBlock):
         logger.debug(f"Unused {args=}, {kwargs=}")
         super().__init__()
 
-    def forward(
-        self, branch_tensors: dict[str, torch.Tensor], this_index: int
-    ) -> torch.Tensor:
+    def forward(self, branch_tensors: dict[int, torch.Tensor]) -> torch.Tensor:
         concat_tensors = torch.stack(list(branch_tensors.values()), dim=-1)
         return torch.sum(concat_tensors, dim=-1)
 
@@ -51,7 +62,7 @@ class SumFusion(FusionBlock):
         return "sum"
 
 
-class MeanFusion(FusionBlock):
+class MeanOutput(OutputBlock):
     """
     Simply averages all inputs.
     """
@@ -60,9 +71,7 @@ class MeanFusion(FusionBlock):
         logger.debug(f"Unused {args=}, {kwargs=}")
         super().__init__()
 
-    def forward(
-        self, branch_tensors: dict[str, torch.Tensor], this_index: int
-    ) -> torch.Tensor:
+    def forward(self, branch_tensors: dict[int, torch.Tensor]) -> torch.Tensor:
         concat_tensors = torch.stack(list(branch_tensors.values()), dim=-1)
         return torch.mean(concat_tensors, dim=-1)
 
@@ -71,7 +80,7 @@ class MeanFusion(FusionBlock):
         return "mean"
 
 
-class MaxFusion(FusionBlock):
+class MaxOutput(OutputBlock):
     """
     Simply takes max at each index over all tensors.
     """
@@ -80,9 +89,7 @@ class MaxFusion(FusionBlock):
         logger.debug(f"Unused {args=}, {kwargs=}")
         super().__init__()
 
-    def forward(
-        self, branch_tensors: dict[str, torch.Tensor], this_index: int
-    ) -> torch.Tensor:
+    def forward(self, branch_tensors: dict[int, torch.Tensor]) -> torch.Tensor:
         concat_tensors = torch.stack(list(branch_tensors.values()), dim=-1)
         return torch.max(concat_tensors, dim=-1)[0]
 
@@ -91,7 +98,7 @@ class MaxFusion(FusionBlock):
         return "max"
 
 
-class SimpleConvFusion(FusionBlock):
+class SimpleConvOutput(OutputBlock):
     """
     Combines all inputs via 1x1 convolution
     """
@@ -99,22 +106,20 @@ class SimpleConvFusion(FusionBlock):
     def __init__(self, *args, **kwargs):
         super().__init__()
         logger.debug(f"Unused {args=}, {kwargs=}")
-        self.params = fusion_block_args[self.get_name()]
-        self.residual = self.params["residual"]
+        self.params = output_block_args[self.get_name()]
 
         self.layers = None
         self.act = None
-        self.norm = None
         self.output_layer = None
         self.has_been_initialized = False
 
-    def _custom_init(self, nr_fusion_tensors: int):
+    def _custom_init(self, nr_output_tensors: int):
         assert not self.has_been_initialized
         depth = self.params["depth"]
         hidden_dim = self.params["hidden_dim"]
 
         self.layers = nn.ModuleList(
-            [nn.Linear(nr_fusion_tensors, hidden_dim)]
+            [nn.Linear(nr_output_tensors, hidden_dim)]
             + [nn.Linear(hidden_dim, hidden_dim) for _ in range(depth - 1)]
         )
         self.act = nn.ReLU()
@@ -124,9 +129,7 @@ class SimpleConvFusion(FusionBlock):
         self.to(torch.device(config["device"]))
         self.has_been_initialized = True
 
-    def forward(
-        self, branch_tensors: dict[int, torch.Tensor], this_index: int
-    ) -> torch.Tensor:
+    def forward(self, branch_tensors: dict[int, torch.Tensor]) -> torch.Tensor:
         if not self.has_been_initialized:
             self._custom_init(len(branch_tensors))
 
@@ -139,9 +142,6 @@ class SimpleConvFusion(FusionBlock):
         x = self.output_layer(x)
         x = x.squeeze()
 
-        if self.residual:
-            x = x + branch_tensors[this_index]
-
         return x
 
     @staticmethod
@@ -149,12 +149,11 @@ class SimpleConvFusion(FusionBlock):
         return "simple_conv"
 
 
-class SimpleAttentionFusion(FusionBlock):
+class SimpleAttentionOutput(OutputBlock):
     def __init__(self, *args, **kwargs):
         super().__init__()
         logger.debug(f"Unused {args=}, {kwargs=}")
-        self.params = fusion_block_args[self.get_name()]
-        self.residual = self.params["residual"]
+        self.params = output_block_args[self.get_name()]
         self.attention_type = self.params["attention_type"]
 
         self.attention_layers = None
@@ -201,9 +200,7 @@ class SimpleAttentionFusion(FusionBlock):
         self.to(torch.device(config["device"]))
         self.has_been_initialized = True
 
-    def forward(
-        self, branch_tensors: dict[int, torch.Tensor], this_index: int
-    ) -> torch.Tensor:
+    def forward(self, branch_tensors: dict[int, torch.Tensor]) -> torch.Tensor:
         if not self.has_been_initialized:
             tensors = list(branch_tensors.values())
             shape = tensors[0].shape
@@ -230,10 +227,6 @@ class SimpleAttentionFusion(FusionBlock):
         x = self.output_layer(x)
 
         out = torch.sum(attention * x, dim=-2)
-
-        if self.residual:
-            out = out + branch_tensors[this_index]
-
         return out
 
     @staticmethod
@@ -244,10 +237,11 @@ class SimpleAttentionFusion(FusionBlock):
 BLOCK_DICT = {
     Class.get_name(): Class
     for Class in (
-        SumFusion,
-        MeanFusion,
-        MaxFusion,
-        SimpleConvFusion,
-        SimpleAttentionFusion,
+        SingleBranch,
+        SumOutput,
+        MeanOutput,
+        MaxOutput,
+        SimpleConvOutput,
+        SimpleAttentionOutput,
     )
 }
