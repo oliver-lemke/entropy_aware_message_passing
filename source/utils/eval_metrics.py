@@ -29,8 +29,19 @@ def dirichlet_energy(self, A, X):
     return energies
 
 
+def accuracy(pred, target, reduction="sum"):
+    corrects = torch.argmax(pred, dim=1) == target
+    if reduction == "sum":
+        ret = torch.sum(corrects)
+    elif reduction == "mean":
+        ret = torch.mean(corrects)
+    else:
+        raise ValueError(f"Unknown reduction type {reduction}!")
+    return ret
+
+
 def metrics(
     pred, target, *args, reduction="sum", **kwargs  # pylint: disable=unused-argument
 ):
     cross_entropy = F.cross_entropy(pred, target, reduction=reduction).item()
-    return {"cross_entropy": cross_entropy}
+    return {"cross_entropy": cross_entropy, "accuracy": accuracy(pred, target)}

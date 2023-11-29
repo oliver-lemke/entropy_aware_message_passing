@@ -141,7 +141,11 @@ class BaseTrainer:
         val_metrics = {f"val/{k}": v for k, v in val_metrics.items()}
         full_metrics = {"train/total_loss": loss.item(), **train_metrics, **val_metrics}
 
-        return full_metrics, len(data.train_mask), len(data.val_mask)
+        return (
+            full_metrics,
+            torch.sum(data.train_mask).item(),
+            torch.sum(data.val_mask).item(),
+        )
 
     def one_epoch(self, epoch):
         logger.info(

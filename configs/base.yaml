@@ -17,37 +17,31 @@ model_type: "hrnet_gcn"
 model_parameters:
     basic_gcn:
         pretrained_weights: null
-        depth: 2
+        depth: 3
         hidden_dim: 256
     hrnet_gcn:
         pretrained_weights: null
-        depth: 24
-        hidden_dim: 256
+        depth: 16
+        hidden_dim: 128
         branches:
-            - 0
-            - 2
             - 4
-            - 6
             - 8
-            - 10
             - 12
             - 14
-            - 16
-            - 18
-            - 20
-            - 22
 
 # can be in [basic_gcn]
 conv_block_args:
     block_type: "basic_gcn"
     basic_gcn:
+        depth: 2
+        hidden_dim: 256
         dropout_rate: 0.0
 # can be in [sum, mean, max, simple_conv, simple_attention]
 fusion_block_args:
-    block_type: "simple_attention"
+    block_type: "simple_conv"
     simple_conv:
         depth: 2
-        hidden_dim: 16
+        hidden_dim: 256
         residual: True
     simple_attention:
         # can be in [per_node, per_element]

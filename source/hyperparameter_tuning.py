@@ -14,10 +14,10 @@ def new_config() -> Config:
 def main():  # pylint: disable=too-many-locals
     config = None
     model_types = ("hrnet_gcn",)
-    model_depths = (24,)
+    model_depths = (32, 64)
     branch_everys = (2,)
     block_depths = (2,)
-    hidden_dims = (128, 256)
+    hidden_dims = (32, 64)
     residuals = (True,)
     conv_block_types = ("basic_gcn",)
     fusion_block_types = ("mean", "max", "simple_conv", "simple_attention")
