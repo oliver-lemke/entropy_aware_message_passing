@@ -130,7 +130,7 @@ class HRNetGCN(nn.Module):
 
     def forward(self, data):
         tensors = {self.bot_branch_idx: data.x}
-        int_reps = {0: data.x}
+        int_reps = {}  # {0: data.x}
 
         for current_depth in range(self.depth - 1):
             if current_depth in self.split_indices[1:]:

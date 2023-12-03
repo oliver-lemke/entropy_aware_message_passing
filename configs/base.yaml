@@ -12,7 +12,7 @@ note: "init"
 
 # the type of solution to run
 # can be any in ["basic_gcn", "hrnet_gcn"]
-model_type: "hrnet_gcn"
+model_type: "basic_gcn"
 
 model_parameters:
     basic_gcn:
@@ -27,7 +27,7 @@ model_parameters:
     hrnet_gcn:
         pretrained_weights: null
         depth: 8
-        hidden_dim: 128
+        hidden_dim: 256
         branches:
             - 0
             - 2
@@ -46,7 +46,7 @@ fusion_block_args:
     block_type: "simple_conv"
     simple_conv:
         depth: 2
-        hidden_dim: 256
+        hidden_dim: 128
         residual: True
     simple_attention:
         # can be in [per_node, per_element]

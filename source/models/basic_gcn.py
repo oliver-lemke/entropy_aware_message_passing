@@ -28,7 +28,7 @@ class BasicGCN(nn.Module):
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
-        intermediate_representations = {0: x}
+        intermediate_representations = {}  # {0: x}
         idx = 1
 
         # First Graph Convolution
