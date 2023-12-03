@@ -1,33 +1,109 @@
 # This file acts as the base configuration file for the project.
 # See configs/template.yaml for an example how to create a deviating configuration file
 # By default the config/user.yaml configuration file is used.
+seed: 0
 
 # used for naming purposes
 note: "init"
 
+#######################################################################################
+################################### MODEL PARAMETERS ##################################
+#######################################################################################
+
 # the type of solution to run
-model_type: "basic_gcn"
-dataset: "planetoid"
+# can be any in ["basic_gcn", "hrnet_gcn"]
+model_type: "hrnet_gcn"
 
 model_parameters:
-  basic_gcn:
-    pretrained_weights: null
-    hidden_dim: 16
+    basic_gcn:
+        pretrained_weights: null
+        depth: 3
+        hidden_dim: 256
+    entropic_gcn:
+      pretrained_weights: null
+      hidden_dim: 16
+      temperature: 1
+      weight: 0.001
+    hrnet_gcn:
+        pretrained_weights: null
+        depth: 16
+        hidden_dim: 128
+        branches:
+            - 4
+            - 8
+            - 12
+            - 14
 
+# can be in [basic_gcn]
+conv_block_args:
+    block_type: "basic_gcn"
+    basic_gcn:
+        depth: 2
+        hidden_dim: 256
+        dropout_rate: 0.0
+# can be in [sum, mean, max, simple_conv, simple_attention]
+fusion_block_args:
+    block_type: "simple_conv"
+    simple_conv:
+        depth: 2
+        hidden_dim: 256
+        residual: True
+    simple_attention:
+        # can be in [per_node, per_element]
+        attention_type: "per_node"
+        attention_depth: 2
+        attention_hidden_dim: 256
+        depth: 2
+        hidden_dim: 256
+        residual: True
+# can be in [id, full]
+transform_block_args:
+    block_type: "full"
+    full:
+        depth: 2
+        hidden_dim: 128
+        residual: True
+# can be in [single, sum, mean, max, simple_conv, simple_attention]
+output_block_args:
+    block_type: "mean"
+    single:
+        branch_index: 0
+    simple_conv:
+        depth: 2
+        hidden_dim: 16
+    simple_attention:
+        # can be in [per_node, per_element]
+        attention_type: "per_node"
+        attention_depth: 2
+        attention_hidden_dim: 256
+        depth: 2
+        hidden_dim: 256
+
+
+#######################################################################################
+################################## DATASET PARAMETERS #################################
+#######################################################################################
+
+# can be in ["planetoid", "faust", "mnist"]
+dataset: "planetoid"
 dataset_parameters:
-  planetoid:
-    name: "Cora"
+    planetoid:
+        name: "Cora"
+
+
+#######################################################################################
+######################################## OTHER ########################################
+#######################################################################################
 
 hyperparameters:
-  train:
-    batch_size: 4096
-    learning_rate: 0.001
-    weight_decay: 0
-    epochs: 100
-    save_every: 10
-  val:
-    batch_size: 4096
-    val_every: 20
+    train:
+        batch_size: 4096
+        learning_rate: 0.001
+        weight_decay: 0
+        epochs: 100
+        save_every: 100
+    val:
+        batch_size: 4096
 
 # device on which to train
 device: "cuda"
@@ -37,25 +113,25 @@ resume_training: False
 
 # paths are relative from project_root_directory
 subpaths:
-  data: "resources/data/"
-  cache: "resources/cache/"
-  logs: "resources/logs/"
-  output: "resources/output/"
-  resume_from: "path/to/weights"
-  pretrained_weights: "resources/pretrained_weights"
+    data: "resources/data/"
+    cache: "resources/cache/"
+    logs: "resources/logs/"
+    output: "resources/output/"
+    resume_from: "path/to/weights"
+    pretrained_weights: "resources/pretrained_weights"
 
 save_names:
-  weights: "weights.pth"
-  optimizer: "optimizer.pth"
-  pretrained_metadata: "pretrained_metadata.json"
+    weights: "weights.pth"
+    optimizer: "optimizer.pth"
+    pretrained_metadata: "pretrained_metadata.json"
 
 wandb:
-  enable: True
-  entity: "gnn_dl"
-  project: "Init Tests"
-  group: "Start"
+    enable: True
+    entity: "gnn_dl"
+    project: "Init Tests"
+    group: null
 
 logging:
-  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-  console: "DEBUG"
-  wandb: "DEBUG"
+    # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    console: "DEBUG"
+    wandb: "DEBUG"
