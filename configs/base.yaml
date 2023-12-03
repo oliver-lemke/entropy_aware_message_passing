@@ -26,13 +26,13 @@ model_parameters:
       weight: 0.001
     hrnet_gcn:
         pretrained_weights: null
-        depth: 16
+        depth: 8
         hidden_dim: 128
         branches:
+            - 0
+            - 2
             - 4
-            - 8
-            - 12
-            - 14
+            - 6
 
 # can be in [basic_gcn]
 conv_block_args:

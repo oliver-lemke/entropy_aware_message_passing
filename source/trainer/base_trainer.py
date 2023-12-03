@@ -11,9 +11,11 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
+import torch_geometric
 import wandb
 from datasets import DatasetFactory
 from models import ModelFactory
+from physics.physics import Entropy
 from torch_geometric.loader import DataLoader
 from utils.config import Config
 from utils.eval_metrics import metrics
@@ -112,23 +114,18 @@ class BaseTrainer:
             self.optimizer, T_max=epochs, eta_min=0
         )
 
-    def step(self, data):
-        # training step
-        self.model.train()
-        data = data.to(config["device"])
-
-        # gradient descent
-        self.optimizer.zero_grad()
-        pred = self.model(data)
-        loss = self.loss(pred[data.train_mask], data.y[data.train_mask])
-        loss.backward()
-        self.optimizer.step()
-
+    def compute_metrics_dict(self, data, pred, int_reps, entropy):
         # metrics
         self.model.eval()
         with torch.no_grad():
             train_metrics = metrics(pred[data.train_mask], data.y[data.train_mask])
             val_metrics = metrics(pred[data.val_mask], data.y[data.val_mask])
+            total_metrics = {}
+            for layer, int_rep in int_reps.items():
+                energy_metric = entropy.dirichlet_energy(int_rep).mean()
+                entropy_metric = entropy.entropy(int_rep)
+                total_metrics[f"total/energy_mean/layer{layer:04d}"] = energy_metric
+                total_metrics[f"total/entropy/layer{layer:04d}"] = entropy_metric
 
             val_loss = self.loss(pred[data.val_mask], data.y[data.val_mask])
             val_metrics["total_loss"] = val_loss.item()
@@ -136,10 +133,36 @@ class BaseTrainer:
                 self.prev_val_loss = val_loss
                 self.best_checkpoint = True
 
+        return train_metrics, val_metrics, total_metrics
+
+    def step(self, data):
+        # training step
+        self.model.train()
+        data = data.to(config["device"])
+
+        A = torch_geometric.utils.to_dense_adj(data.edge_index).squeeze()
+        entropy = Entropy(T=1.0, A=A)
+
+        # gradient descent
+        self.optimizer.zero_grad()
+        pred, intermediate_representations = self.model(data)
+        loss = self.loss(pred[data.train_mask], data.y[data.train_mask])
+        loss.backward()
+        self.optimizer.step()
+
+        train_metrics, val_metrics, total_metrics = self.compute_metrics_dict(
+            data, pred, intermediate_representations, entropy
+        )
+
         # make ready for return
         train_metrics = {f"train/{k}": v for k, v in train_metrics.items()}
         val_metrics = {f"val/{k}": v for k, v in val_metrics.items()}
-        full_metrics = {"train/total_loss": loss.item(), **train_metrics, **val_metrics}
+        full_metrics = {
+            "train/total_loss": loss.item(),
+            **train_metrics,
+            **val_metrics,
+            **total_metrics,
+        }
 
         return (
             full_metrics,

@@ -33,12 +33,12 @@ class HRNetGCN(nn.Module):
         # this is the bottom branch of the network, which simply does convolutions
         self.base_network = nn.ModuleList(
             [ConvBlock(input_dim, hidden_dim)]
-            + [ConvBlock(hidden_dim, hidden_dim) for _ in range(self.depth - 1)]
-            + [ConvBlock(hidden_dim, output_dim)]
+            + [ConvBlock(hidden_dim, hidden_dim) for _ in range(self.depth - 2)]
         )
         self.transform_blocks = self._setup_transform_blocks(TransformBlock)
         self.fusion_blocks = self._setup_fusion_blocks(FusionBlock)
         self.output_block = OutputBlock()
+        self.down_projection = nn.Linear(hidden_dim, output_dim)
 
         if 0 in self.split_indices:
             middle_dim = (input_dim + hidden_dim) // 2
@@ -130,12 +130,18 @@ class HRNetGCN(nn.Module):
 
     def forward(self, data):
         tensors = {self.bot_branch_idx: data.x}
+        int_reps = {0: data.x}
 
-        for current_depth in range(self.depth):
+        for current_depth in range(self.depth - 1):
             if current_depth in self.split_indices[1:]:
                 tensors = self._fuse(tensors, current_depth)
             if current_depth in self.split_indices:
                 tensors = self._branch(tensors, current_depth)
             tensors = self._normal_step(tensors, data.edge_index, current_depth)
+            int_reps[current_depth + 1] = tensors[self.bot_branch_idx]
 
-        return self.output_block(tensors)
+        out = self.output_block(tensors)
+        int_reps[self.depth + 1] = out
+        out = self.down_projection(out)
+        int_reps[self.depth + 2] = out
+        return out, int_reps
