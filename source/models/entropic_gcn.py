@@ -15,8 +15,10 @@ class EntropicGCN(BasicGCN):
         params = config["model_parameters"]["entropic_gcn"]
 
         self.T = params["temperature"]
-        self.A = None
         self.weight = params["weight"]
+        self.normalize_energies = params["normalize_energies"]
+
+        self.A = None
 
         # TODO
         # 1. switch to efficient (sparse?) framework
@@ -33,6 +35,7 @@ class EntropicGCN(BasicGCN):
 
         if self.A is None:
             self.A = tg.utils.to_dense_adj(data.edge_index).squeeze()
+            self.energy_normalization = self.compute_energy_normalization()
 
         embedding = super().forward(data)
 
@@ -58,7 +61,21 @@ class EntropicGCN(BasicGCN):
             X (torch.tensor, shape NxN): graph embedding
         """
 
-        return torch.sum(self.dirichlet_energy(X))
+        return torch.mean(self.dirichlet_energy(X))
+
+    def compute_energy_normalization(self):
+        """ 
+        Compute normalization for each nodes dirichlet energy.
+        """
+
+        # compute degree of each node
+        degrees = torch.sum(self.A, dim=1)
+
+        # compute normalization
+        normalization = 1 / torch.sqrt(degrees * self.hidden_dim)
+
+        return normalization
+
 
     def dirichlet_energy(self, X):
         """Comute Dirichlet Energie for graph embedding X
@@ -72,6 +89,9 @@ class EntropicGCN(BasicGCN):
         res3 = torch.einsum("ij,jk,jk->i", self.A, X, X)
 
         energies = 1 / 2 * (res1 - 2 * res2 + res3)
+
+        if self.normalize_energies:
+            energies = energies * self.energy_normalization
 
         # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
         # FIXME still, not sure why this is happening. We should see whether this issue goes away
@@ -114,6 +134,9 @@ class EntropicGCN(BasicGCN):
 
         result = 1 / self.T * (res1 + res2 - res3 - res4)
 
+        if self.normalize_energies:
+            result = result * self.energy_normalization[:, None]
+
         """
         print(result)
         test = self.Pbar(X)
@@ -122,7 +145,7 @@ class EntropicGCN(BasicGCN):
         for i in range(X.shape[0]):
             sum = 0
             for j in range(X.shape[0]):
-                contrib = (
+                contrib = self.energy_normalization[i]*(
                     self.A[i, j] * X[i] * test[i]
                     + self.A[i, j] * X[i] * test[j]
                     - self.A[i, j] * X[j] * test[i]
@@ -132,6 +155,7 @@ class EntropicGCN(BasicGCN):
             res.append(sum)
 
             print(1 / self.T * sum)
+
         """
 
         return result
