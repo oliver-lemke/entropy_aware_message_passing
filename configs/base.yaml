@@ -19,6 +19,11 @@ model_parameters:
         pretrained_weights: null
         depth: 3
         hidden_dim: 256
+    entropic_gcn:
+      pretrained_weights: null
+      hidden_dim: 16
+      temperature: 1
+      weight: 0.001
     hrnet_gcn:
         pretrained_weights: null
         depth: 16
