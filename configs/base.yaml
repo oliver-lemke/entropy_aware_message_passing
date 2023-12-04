@@ -20,10 +20,16 @@ model_parameters:
         depth: 3
         hidden_dim: 256
     entropic_gcn:
-      pretrained_weights: null
-      temperature: 1
-      weight: 0.001
-      normalize_energies: True
+        pretrained_weights: null
+        depth: 3
+        hidden_dim: 256
+        temperature:
+            learnable: false
+            value: 1
+        weight:
+            learnable: false
+            value: 0.001
+        normalize_energies: True
     hrnet_gcn:
         pretrained_weights: null
         depth: 16

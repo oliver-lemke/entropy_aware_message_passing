@@ -37,4 +37,4 @@ class BasicGCN(nn.Module):
         # Second Graph Convolution
         x = self.conv_out(x, edge_index)
 
-        return self.log_softmax(x)
+        return x
