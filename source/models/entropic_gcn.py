@@ -1,24 +1,47 @@
-from models.basic_gcn import BasicGCN
-from utils.config import Config
-
 import torch
+from torch import nn
+
 import torch_geometric as tg
+from torch_geometric import nn as tnn
+from utils.config import Config
 
 config = Config()
 
 
-class EntropicGCN(BasicGCN):
-    def __init__(self, *args, **kwargs):
+class EntropicGCN(nn.Module):
+    def __init__(self, input_dim, output_dim):
         """Entropic Wrapper"""
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
         params = config["model_parameters"]["entropic_gcn"]
+        depth = params["depth"]
+        self.hidden_dim = params["hidden_dim"]
+        self.convs = nn.ModuleList(
+            [tnn.GCNConv(input_dim, self.hidden_dim)]
+            + [tnn.GCNConv(self.hidden_dim, self.hidden_dim) for _ in range(depth - 1)]
+        )
+        self.conv_out = tnn.GCNConv(self.hidden_dim, output_dim)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout()
 
-        self.T = params["temperature"]
-        self.weight = params["weight"]
+        temperature_params = params["temperature"]
+        temperature_value = temperature_params["value"]
+        if temperature_params["learnable"]:
+            self.temperature = nn.Parameter(torch.tensor([temperature_value]))
+        else:
+            self.temperature = temperature_value
+
+        weight_params = params["weight"]
+        weight_value = weight_params["value"]
+        if weight_params["learnable"]:
+            self.weight = nn.Parameter(torch.tensor([weight_value]))
+        else:
+            self.weight = weight_value
+
         self.normalize_energies = params["normalize_energies"]
 
         self.A = None
+        self.energy_normalization = None
 
         # TODO
         # 1. switch to efficient (sparse?) framework
@@ -37,7 +60,16 @@ class EntropicGCN(BasicGCN):
             self.A = tg.utils.to_dense_adj(data.edge_index).squeeze()
             self.energy_normalization = self.compute_energy_normalization()
 
-        embedding = super().forward(data)
+        x, edge_index = data.x, data.edge_index
+
+        # First Graph Convolution
+        for conv in self.convs:
+            x = conv(x, edge_index)
+            x = self.relu(x)
+            x = self.dropout(x)
+
+        # Second Graph Convolution
+        embedding = self.conv_out(x, edge_index)
 
         return embedding + self.weight * self.gradient_entropy(embedding)
 
@@ -64,7 +96,7 @@ class EntropicGCN(BasicGCN):
         return torch.mean(self.dirichlet_energy(X))
 
     def compute_energy_normalization(self):
-        """ 
+        """
         Compute normalization for each nodes dirichlet energy.
         """
 
@@ -75,7 +107,6 @@ class EntropicGCN(BasicGCN):
         normalization = 1 / torch.sqrt(degrees * self.hidden_dim)
 
         return normalization
-
 
     def dirichlet_energy(self, X):
         """Comute Dirichlet Energie for graph embedding X
@@ -114,7 +145,7 @@ class EntropicGCN(BasicGCN):
         # return softmax of energies scaled by temperature
         # adding an epsilon is a hack to avoid log(0) = -inf.
         # x*ln(x) goes to 0 as x goes to 0, so this is okay
-        distribution = torch.softmax(-energies / self.T, dim=0) + 1e-10
+        distribution = torch.softmax(-energies / self.temperature, dim=0) + 1e-10
 
         return distribution
 
@@ -132,7 +163,7 @@ class EntropicGCN(BasicGCN):
         res3 = torch.einsum("ij,jk,i->ik", self.A, X, P_bar)
         res4 = torch.einsum("ij,jk,j->ik", self.A, X, P_bar)
 
-        result = 1 / self.T * (res1 + res2 - res3 - res4)
+        result = 1 / self.temperature * (res1 + res2 - res3 - res4)
 
         if self.normalize_energies:
             result = result * self.energy_normalization[:, None]
@@ -154,7 +185,7 @@ class EntropicGCN(BasicGCN):
                 sum += contrib
             res.append(sum)
 
-            print(1 / self.T * sum)
+            print(1 / self.temperature * sum)
 
         """
 

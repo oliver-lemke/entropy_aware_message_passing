@@ -12,7 +12,7 @@ note: "init"
 
 # the type of solution to run
 # can be any in ["basic_gcn", "hrnet_gcn"]
-model_type: "hrnet_gcn"
+model_type: "entropic_gcn"
 
 model_parameters:
     basic_gcn:
@@ -20,10 +20,16 @@ model_parameters:
         depth: 3
         hidden_dim: 256
     entropic_gcn:
-      pretrained_weights: null
-      hidden_dim: 16
-      temperature: 1
-      weight: 0.001
+        pretrained_weights: null
+        depth: 3
+        hidden_dim: 256
+        temperature:
+            learnable: false
+            value: 1
+        weight:
+            learnable: false
+            value: 0.001
+        normalize_energies: True
     hrnet_gcn:
         pretrained_weights: null
         depth: 16
@@ -106,7 +112,7 @@ hyperparameters:
         batch_size: 4096
 
 # device on which to train
-device: "cuda"
+device: "cpu"
 
 # whether to resume training from earlier model
 resume_training: False

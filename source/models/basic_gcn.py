@@ -13,13 +13,13 @@ class BasicGCN(nn.Module):
         super(BasicGCN, self).__init__()
         params = config["model_parameters"]["basic_gcn"]
         depth = params["depth"]
-        hidden_dim = params["hidden_dim"]
+        self.hidden_dim = params["hidden_dim"]
 
         self.convs = nn.ModuleList(
-            [tnn.GCNConv(input_dim, hidden_dim)]
-            + [tnn.GCNConv(hidden_dim, hidden_dim) for _ in range(depth - 1)]
+            [tnn.GCNConv(input_dim, self.hidden_dim)]
+            + [tnn.GCNConv(self.hidden_dim, self.hidden_dim) for _ in range(depth - 1)]
         )
-        self.conv_out = tnn.GCNConv(hidden_dim, output_dim)
+        self.conv_out = tnn.GCNConv(self.hidden_dim, output_dim)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout()
         self.log_softmax = nn.LogSoftmax(dim=1)
@@ -37,4 +37,4 @@ class BasicGCN(nn.Module):
         # Second Graph Convolution
         x = self.conv_out(x, edge_index)
 
-        return self.log_softmax(x)
+        return x
