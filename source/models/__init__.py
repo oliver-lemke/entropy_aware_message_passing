@@ -18,7 +18,11 @@ class ModelFactory:
         Each entry should have 1 attribute:
         (1) A function for the model constructor
         """
-        self.models = {"basic_gcn": BasicGCN, "entropic_gcn": EntropicGCN, "hrnet_gcn": HRNetGCN}
+        self.models = {
+            "basic_gcn": BasicGCN,
+            "entropic_gcn": EntropicGCN,
+            "hrnet_gcn": HRNetGCN,
+        }
 
     def get_model(self, *args, **kwargs):
         """
