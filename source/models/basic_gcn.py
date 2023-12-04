@@ -17,7 +17,7 @@ class BasicGCN(nn.Module):
 
         self.convs = nn.ModuleList(
             [tnn.GCNConv(input_dim, hidden_dim)]
-            + [tnn.GCNConv(hidden_dim, hidden_dim) for _ in range(depth - 2)]
+            + [tnn.GCNConv(hidden_dim, hidden_dim) for _ in range(depth - 1)]
         )
         self.conv_out = tnn.GCNConv(hidden_dim, output_dim)
         self.relu = nn.ReLU()
