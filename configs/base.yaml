@@ -32,13 +32,13 @@ model_parameters:
         normalize_energies: True
     hrnet_gcn:
         pretrained_weights: null
-        depth: 16
-        hidden_dim: 128
+        depth: 8
+        hidden_dim: 256
         branches:
+            - 0
+            - 2
             - 4
-            - 8
-            - 12
-            - 14
+            - 6
 
 # can be in [basic_gcn]
 conv_block_args:
@@ -52,7 +52,7 @@ fusion_block_args:
     block_type: "simple_conv"
     simple_conv:
         depth: 2
-        hidden_dim: 256
+        hidden_dim: 128
         residual: True
     simple_attention:
         # can be in [per_node, per_element]
@@ -112,7 +112,7 @@ hyperparameters:
         batch_size: 4096
 
 # device on which to train
-device: "cpu"
+device: "cuda"
 
 # whether to resume training from earlier model
 resume_training: False

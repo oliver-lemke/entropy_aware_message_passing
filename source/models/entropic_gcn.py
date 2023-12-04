@@ -61,17 +61,25 @@ class EntropicGCN(nn.Module):
             self.energy_normalization = self.compute_energy_normalization()
 
         x, edge_index = data.x, data.edge_index
+        intermediate_representations = {}  # {0: x}
+        idx = 1
 
         # First Graph Convolution
         for conv in self.convs:
             x = conv(x, edge_index)
             x = self.relu(x)
             x = self.dropout(x)
+            intermediate_representations[idx] = x
+            idx += 1
 
         # Second Graph Convolution
         embedding = self.conv_out(x, edge_index)
+        intermediate_representations[idx] = embedding
 
-        return embedding + self.weight * self.gradient_entropy(embedding)
+        return (
+            embedding + self.weight * self.gradient_entropy(embedding),
+            intermediate_representations,
+        )
 
     def entropy(self, X):
         """Compute the entropy of the graph embedding X
