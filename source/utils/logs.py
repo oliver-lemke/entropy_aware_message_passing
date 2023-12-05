@@ -1,5 +1,7 @@
 import logging
 import os.path
+import re
+from typing import Any
 
 import numpy as np
 
@@ -37,6 +39,14 @@ def is_scalar(value) -> bool:
         return True
     else:
         return False
+
+
+def add_prefix_to_dict(input_dict: dict, prefix: str) -> dict:
+    return {f"{prefix}{k}": v for (k, v) in input_dict.items()}
+
+
+def combine_dicts(**kwargs) -> dict:
+    return {k: v for (k, v) in kwargs.items()}
 
 
 class _WandbHandler(logging.Handler):
