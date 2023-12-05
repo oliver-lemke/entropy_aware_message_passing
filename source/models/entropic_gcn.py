@@ -22,7 +22,7 @@ class EntropicGCN(nn.Module):
         )
         self.conv_out = tnn.GCNConv(self.hidden_dim, output_dim)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout()
+        self.norm = nn.LayerNorm(self.hidden_dim)
 
         temperature_params = params["temperature"]
         temperature_value = temperature_params["value"]
@@ -68,13 +68,13 @@ class EntropicGCN(nn.Module):
         for conv in self.convs:
             x = conv(x, edge_index)
             x = self.relu(x)
-            x = self.dropout(x)
+            x = self.norm(x)
             intermediate_representations[idx] = x
             idx += 1
 
         # Second Graph Convolution
         embedding = self.conv_out(x, edge_index)
-        intermediate_representations[idx] = embedding
+        intermediate_representations["final"] = embedding
 
         return (
             embedding + self.weight * self.gradient_entropy(embedding),

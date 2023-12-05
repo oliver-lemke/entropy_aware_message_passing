@@ -1,5 +1,9 @@
 import logging
 import os.path
+import re
+from typing import Any
+
+import numpy as np
 
 import wandb
 from utils.config import Config
@@ -26,6 +30,23 @@ LEVELS = {
     "ERROR": logging.ERROR,
     "CRITICAL": logging.CRITICAL,
 }
+
+
+def is_scalar(value) -> bool:
+    if isinstance(value, int) or isinstance(value, float):
+        return True
+    elif isinstance(value, np.ndarray) and value.squeeze().shape == (1,):
+        return True
+    else:
+        return False
+
+
+def add_prefix_to_dict(input_dict: dict, prefix: str) -> dict:
+    return {f"{prefix}{k}": v for (k, v) in input_dict.items()}
+
+
+def combine_dicts(**kwargs) -> dict:
+    return {k: v for (k, v) in kwargs.items()}
 
 
 class _WandbHandler(logging.Handler):

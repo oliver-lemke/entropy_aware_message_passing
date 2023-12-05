@@ -26,17 +26,14 @@ class BasicGCNBlock(TransformBlock):
 
     def __init__(self, input_dim, output_dim):
         super().__init__()
-        params = conv_block_args[self.get_name()]
         self.conv = tnn.GCNConv(input_dim, output_dim)
         self.relu = nn.ReLU()
         self.norm = nn.LayerNorm(output_dim)
-        self.dropout = nn.Dropout(p=params["dropout_rate"])
 
     def forward(self, x, edge_index):
         x = self.conv(x, edge_index)
         x = self.relu(x)
         x = self.norm(x)
-        x = self.dropout(x)
         return x
 
     @staticmethod

@@ -45,6 +45,7 @@ class HRNetGCN(nn.Module):
             self.initial_projection_layer = nn.Sequential(
                 nn.Linear(input_dim, middle_dim),
                 nn.ReLU(),
+                nn.LayerNorm(middle_dim),
                 nn.Linear(middle_dim, hidden_dim),
             )
 
@@ -141,7 +142,7 @@ class HRNetGCN(nn.Module):
             int_reps[current_depth + 1] = tensors[self.bot_branch_idx]
 
         out = self.output_block(tensors)
-        int_reps[self.depth + 1] = out
+        int_reps["merged"] = out
         out = self.down_projection(out)
-        int_reps[self.depth + 2] = out
+        int_reps["final"] = out
         return out, int_reps

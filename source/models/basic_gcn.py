@@ -21,9 +21,7 @@ class BasicGCN(nn.Module):
         )
         self.conv_out = tnn.GCNConv(hidden_dim, output_dim)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout()
-        # TODO: do we need log softmax?
-        self.log_softmax = nn.LogSoftmax(dim=1)
+        self.norm = nn.LayerNorm(hidden_dim)
         logger.debug(str(self))
 
     def forward(self, data):
@@ -35,12 +33,12 @@ class BasicGCN(nn.Module):
         for conv in self.convs:
             x = conv(x, edge_index)
             x = self.relu(x)
-            x = self.dropout(x)
+            x = self.norm(x)
             intermediate_representations[idx] = x
             idx += 1
 
         # Second Graph Convolution
         x = self.conv_out(x, edge_index)
-        intermediate_representations[idx] = x
+        intermediate_representations["final"] = x
 
         return x, intermediate_representations
