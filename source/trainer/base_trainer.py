@@ -5,7 +5,6 @@ import json
 import os
 import random
 import shutil
-from collections import defaultdict
 
 import numpy as np
 import torch
@@ -38,6 +37,7 @@ class BaseTrainer:
         self.output_dim = -1
         self.prev_val_loss = np.infty
         self.best_checkpoint = False
+        self._step = 0
 
         self._make_output_dir()
         if config["wandb"]["enable"]:
@@ -114,27 +114,6 @@ class BaseTrainer:
             self.optimizer, T_max=epochs, eta_min=0
         )
 
-    def compute_metrics_dict(self, data, pred, int_reps, entropy):
-        # metrics
-        self.model.eval()
-        with torch.no_grad():
-            train_metrics = metrics(pred[data.train_mask], data.y[data.train_mask])
-            val_metrics = metrics(pred[data.val_mask], data.y[data.val_mask])
-            total_metrics = {}
-            for layer, int_rep in int_reps.items():
-                energy_metric = entropy.dirichlet_energy(int_rep).mean()
-                entropy_metric = entropy.entropy(int_rep)
-                total_metrics[f"total/energy_mean/layer{layer:04d}"] = energy_metric
-                total_metrics[f"total/entropy/layer{layer:04d}"] = entropy_metric
-
-            val_loss = self.loss(pred[data.val_mask], data.y[data.val_mask])
-            val_metrics["total_loss"] = val_loss.item()
-            if val_loss < self.prev_val_loss:
-                self.prev_val_loss = val_loss
-                self.best_checkpoint = True
-
-        return train_metrics, val_metrics, total_metrics
-
     def step(self, data):
         # training step
         self.model.train()
@@ -150,50 +129,18 @@ class BaseTrainer:
         loss.backward()
         self.optimizer.step()
 
-        train_metrics, val_metrics, total_metrics = self.compute_metrics_dict(
-            data, pred, intermediate_representations, entropy
-        )
+        self._step += 1
+        self._log(data, pred, intermediate_representations, entropy)
 
-        # make ready for return
-        train_metrics = {f"train/{k}": v for k, v in train_metrics.items()}
-        val_metrics = {f"val/{k}": v for k, v in val_metrics.items()}
-        full_metrics = {
-            "train/total_loss": loss.item(),
-            **train_metrics,
-            **val_metrics,
-            **total_metrics,
-        }
-
-        return (
-            full_metrics,
-            torch.sum(data.train_mask).item(),
-            torch.sum(data.val_mask).item(),
-        )
+        return
 
     def one_epoch(self, epoch):
         logger.info(
             f"Training epoch {epoch} / {config['hyperparameters']['train']['epochs']}"
         )
-
-        total_metrics = defaultdict(float)
-        total_train, total_val = 0, 0
-
         for data in self.loader:
-            step_metrics, nr_train, nr_val = self.step(data)
-
-            for k in step_metrics.keys():
-                total_metrics[k] += step_metrics[k]
-            total_train += nr_train
-            total_val += nr_val
-
+            self.step(data)
         self.scheduler.step()
-
-        for k, v in total_metrics.items():
-            if k.startswith("train/"):
-                total_metrics[k] = v / total_train
-            elif k.startswith("val/"):
-                total_metrics[k] = v / total_val
-        return total_metrics
 
     def train(self):
         # so logging starts at 1
@@ -212,7 +159,7 @@ class BaseTrainer:
             self._load_state(path)
 
         for epoch in range(1, config["hyperparameters"]["train"]["epochs"] + 1):
-            epoch_metrics = self.one_epoch(epoch)
+            self.one_epoch(epoch)
 
             path_ending = f"epoch_{epoch}"
             if epoch % config["hyperparameters"]["train"]["save_every"] == 0:
@@ -223,8 +170,6 @@ class BaseTrainer:
                 self._clear_best_checkpoint_dir()
                 self._save_state(path)
                 self.best_checkpoint = False
-
-            self._log(epoch, **epoch_metrics)
         self._close()
 
     def _make_output_dir(self):
@@ -273,12 +218,37 @@ class BaseTrainer:
         self.model.load_state_dict(model_state_dict)
         self.optimizer.load_state_dict(optimizer_state_dict)
 
-    def _log(self, epoch: int, **log_dict):
+    def _log_scalars(self, **log_dict):
         for name, value in log_dict.items():
-            self.writer.add_scalar(name, value, epoch)
+            self.writer.add_scalar(name, value, self._step)
             logger.info(f"{name}: {value:.5f}")
         if config["wandb"]["enable"]:
             wandb.log(log_dict)
+
+    def _log(self, data, pred, int_reps, entropy):
+        # metrics
+        self.model.eval()
+        with torch.no_grad():
+            train_metrics = metrics(pred[data.train_mask], data.y[data.train_mask])
+            val_metrics = metrics(pred[data.val_mask], data.y[data.val_mask])
+            total_metrics = {}
+            extra_data = {}
+            for layer, int_rep in int_reps.items():
+                energy_metric = entropy.dirichlet_energy(int_rep)
+                entropy_metric = entropy.entropy(int_rep)
+                total_metrics[
+                    f"total/energy_mean/layer{layer:04d}"
+                ] = energy_metric.mean()
+                total_metrics[f"total/entropy/layer{layer:04d}"] = entropy_metric
+                extra_data[f"energy/layer{layer:04d}"] = energy_metric
+
+            val_loss = self.loss(pred[data.val_mask], data.y[data.val_mask])
+            val_metrics["total_loss"] = val_loss.item()
+            if val_loss < self.prev_val_loss:
+                self.prev_val_loss = val_loss
+                self.best_checkpoint = True
+
+        return train_metrics, val_metrics, total_metrics
 
     def _close(self):
         wandb.finish(exit_code=0, quiet=False)

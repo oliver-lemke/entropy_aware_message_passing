@@ -1,6 +1,8 @@
 import logging
 import os.path
 
+import numpy as np
+
 import wandb
 from utils.config import Config
 
@@ -26,6 +28,15 @@ LEVELS = {
     "ERROR": logging.ERROR,
     "CRITICAL": logging.CRITICAL,
 }
+
+
+def is_scalar(value) -> bool:
+    if isinstance(value, int) or isinstance(value, float):
+        return True
+    elif isinstance(value, np.ndarray) and value.squeeze().shape == (1,):
+        return True
+    else:
+        return False
 
 
 class _WandbHandler(logging.Handler):
