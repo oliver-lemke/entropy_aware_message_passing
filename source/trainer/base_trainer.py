@@ -132,8 +132,6 @@ class BaseTrainer:
         self._step += 1
         self._log(data, pred, intermediate_representations, entropy)
 
-        return
-
     def one_epoch(self, epoch):
         logger.info(
             f"Training epoch {epoch} / {config['hyperparameters']['train']['epochs']}"
@@ -218,29 +216,35 @@ class BaseTrainer:
         self.model.load_state_dict(model_state_dict)
         self.optimizer.load_state_dict(optimizer_state_dict)
 
-    def _log_scalars(self, **log_dict):
-        for name, value in log_dict.items():
+    def _log_scalars(self, prefix: str = "", **log_dict):
+        prefix_log_dict = {f"{prefix}{k}": v for (k, v) in log_dict.items()}
+        for name, value in prefix_log_dict.items():
             self.writer.add_scalar(name, value, self._step)
             logger.info(f"{name}: {value:.5f}")
         if config["wandb"]["enable"]:
-            wandb.log(log_dict)
+            wandb.log(prefix_log_dict, step=self._step)
 
     def _log(self, data, pred, int_reps, entropy):
         # metrics
         self.model.eval()
         with torch.no_grad():
-            train_metrics = metrics(pred[data.train_mask], data.y[data.train_mask])
-            val_metrics = metrics(pred[data.val_mask], data.y[data.val_mask])
+            train_metrics = metrics(
+                pred[data.train_mask], data.y[data.train_mask], reduction="mean"
+            )
+            self._log_scalars("train/", **train_metrics)
+            val_metrics = metrics(
+                pred[data.val_mask], data.y[data.val_mask], reduction="mean"
+            )
+            self._log_scalars("val/", **val_metrics)
             total_metrics = {}
             extra_data = {}
             for layer, int_rep in int_reps.items():
                 energy_metric = entropy.dirichlet_energy(int_rep)
                 entropy_metric = entropy.entropy(int_rep)
-                total_metrics[
-                    f"total/energy_mean/layer{layer:04d}"
-                ] = energy_metric.mean()
-                total_metrics[f"total/entropy/layer{layer:04d}"] = entropy_metric
+                total_metrics[f"energy_mean/layer{layer:04d}"] = energy_metric.mean()
+                total_metrics[f"entropy/layer{layer:04d}"] = entropy_metric
                 extra_data[f"energy/layer{layer:04d}"] = energy_metric
+            self._log_scalars("total/", **total_metrics)
 
             val_loss = self.loss(pred[data.val_mask], data.y[data.val_mask])
             val_metrics["total_loss"] = val_loss.item()
