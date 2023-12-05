@@ -13,9 +13,9 @@ class EntropicGCN(nn.Module):
         """Entropic Wrapper"""
         super().__init__()
 
-        params = config["model_parameters"]["entropic_gcn"]
-        depth = params["depth"]
-        self.hidden_dim = params["hidden_dim"]
+        self.params = config["model_parameters"]["entropic_gcn"]
+        depth = self.params["depth"]
+        self.hidden_dim = self.params["hidden_dim"]
         self.convs = nn.ModuleList(
             [tnn.GCNConv(input_dim, self.hidden_dim)]
             + [tnn.GCNConv(self.hidden_dim, self.hidden_dim) for _ in range(depth - 1)]
@@ -24,21 +24,21 @@ class EntropicGCN(nn.Module):
         self.relu = nn.ReLU()
         self.norm = nn.LayerNorm(self.hidden_dim)
 
-        temperature_params = params["temperature"]
+        temperature_params = self.params["temperature"]
         temperature_value = temperature_params["value"]
         if temperature_params["learnable"]:
             self.temperature = nn.Parameter(torch.tensor([temperature_value]))
         else:
             self.temperature = temperature_value
 
-        weight_params = params["weight"]
+        weight_params = self.params["weight"]
         weight_value = weight_params["value"]
         if weight_params["learnable"]:
             self.weight = nn.Parameter(torch.tensor([weight_value]))
         else:
             self.weight = weight_value
 
-        self.normalize_energies = params["normalize_energies"]
+        self.normalize_energies = self.params["normalize_energies"]
 
         self.A = None
         self.energy_normalization = None
@@ -198,3 +198,9 @@ class EntropicGCN(nn.Module):
         """
 
         return result
+
+    def clamp_learnables(self):
+        if self.params["temperature"]["learnable"]:
+            self.temperature = torch.clamp(self.temperature, min=1e-5)
+        if self.params["weight"]["learnable"]:
+            self.weight = torch.clamp(self.weight, min=1e-5)

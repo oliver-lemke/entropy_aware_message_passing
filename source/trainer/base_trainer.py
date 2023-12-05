@@ -128,6 +128,8 @@ class BaseTrainer:
         loss.backward()
         self.optimizer.step()
 
+        with torch.no_grad():
+            self.model.clamp_learnables()
         self._log(data, pred, loss, intermediate_representations)
 
     def one_epoch(self):
