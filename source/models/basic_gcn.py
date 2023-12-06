@@ -42,3 +42,7 @@ class BasicGCN(nn.Module):
         intermediate_representations["final"] = x
 
         return x, intermediate_representations
+
+    def clamp_learnables(self):
+        # no learnable parameters
+        pass
