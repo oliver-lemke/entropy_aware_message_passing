@@ -6,7 +6,6 @@ config = Config()
 
 
 def main():
-
     if config["run_type"] == "train":
         agent = BaseTrainer()
         agent.train()

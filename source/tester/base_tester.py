@@ -13,14 +13,13 @@ from torch.utils.tensorboard import SummaryWriter
 import wandb
 from datasets import DatasetFactory
 from models import ModelFactory
+from physics.physics import Entropy
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 from torch_geometric.utils import add_self_loops, to_dense_adj, to_networkx
 from utils.config import Config
 from utils.eval_metrics import metrics
 from utils.logs import Logger
-from physics.physics import Entropy
-
 
 config = Config()
 logger = Logger()
@@ -99,7 +98,6 @@ class BaseTester:
                 dir=self.wandb_dir,
                 id=self.id,
             )
-        
 
     def _make_output_dir(self):
         experiments_folder = config.get_subpath("output")
@@ -112,7 +110,6 @@ class BaseTester:
         self.wandb_dir = os.path.join(self.output_dir, "wandb")
 
         os.makedirs(self.wandb_dir, exist_ok=False)
-
 
     def prepare_dataset(self):
         logger.info("Preparing dataset")
@@ -149,6 +146,9 @@ class BaseTester:
                 data.append((depth, self.calculate_energy()))
             energy_table = wandb.Table(data=data, columns=["depth", "energy"])
             log_dict[f"energy/{model_type}"] = wandb.plot.line(
-                energy_table, "depth", "energy", title=f"Energy as a function of model depth for {model_type}"
+                energy_table,
+                "depth",
+                "energy",
+                title=f"Energy as a function of model depth for {model_type}",
             )
         wandb.log(log_dict)
