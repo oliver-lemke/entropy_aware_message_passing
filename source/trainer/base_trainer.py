@@ -260,7 +260,7 @@ class BaseTrainer:
                 # calculate energy and entropy from intermediate representations
                 for layer, int_rep in int_reps.items():
                     energy_metric = entropy.dirichlet_energy(int_rep).mean()
-                    entropy_metric = entropy.entropy(int_rep)
+                    entropy_metric = entropy.entropy(int_rep, 1.0)
                     energies.append(energy_metric)
                     entropies.append(entropy_metric)
                     if isinstance(layer, int):
