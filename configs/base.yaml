@@ -21,7 +21,7 @@ model_parameters:
         hidden_dim: 256
     entropic_gcn:
         pretrained_weights: null
-        depth: 3
+        depth: 6
         hidden_dim: 256
         temperature:
             learnable: false

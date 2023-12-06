@@ -1,12 +1,29 @@
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 import torch_geometric as tg
 from physics import physics
+from physics.physics import Entropy
 from torch_geometric import nn as tnn
+from torch_geometric.nn.conv.gcn_conv import gcn_norm
+from torch_geometric.typing import Adj, OptTensor, SparseTensor
 from utils.config import Config
 
 config = Config()
+
+
+class EntropicLayer(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super().__init__()
+        self.gcn_conv = tnn.GCNConv(input_dim, output_dim)
+
+    def forward(self, x, edge_index, A, weight, temperature):
+        x = self.gcn_conv(x, edge_index)
+        entropy = Entropy(A)
+        with torch.no_grad():
+            entropy_gradient = entropy.gradient_entropy(x, temperature, True)
+        x = x + weight * entropy_gradient
+        return x
 
 
 class EntropicGCN(nn.Module):
@@ -18,8 +35,11 @@ class EntropicGCN(nn.Module):
         depth = params["depth"]
         self.hidden_dim = params["hidden_dim"]
         self.convs = nn.ModuleList(
-            [tnn.GCNConv(input_dim, self.hidden_dim)]
-            + [tnn.GCNConv(self.hidden_dim, self.hidden_dim) for _ in range(depth - 1)]
+            [EntropicLayer(input_dim, self.hidden_dim)]
+            + [
+                EntropicLayer(self.hidden_dim, self.hidden_dim)
+                for _ in range(depth - 1)
+            ]
         )
         self.conv_out = tnn.GCNConv(self.hidden_dim, output_dim)
         self.relu = nn.ReLU()
@@ -68,7 +88,7 @@ class EntropicGCN(nn.Module):
 
         # First Graph Convolution
         for conv in self.convs:
-            x = conv(x, edge_index)
+            x = conv(x, edge_index, self.A, self.weight, self.temperature)
             x = self.relu(x)
             x = self.norm(x)
             intermediate_representations[idx] = x
@@ -79,10 +99,6 @@ class EntropicGCN(nn.Module):
         intermediate_representations["final"] = embedding
 
         return (
-            embedding
-            + self.weight
-            * self.entropy.gradient_entropy(
-                embedding, self.temperature, normalize_energies=self.normalize_energies
-            ),
+            embedding,
             intermediate_representations,
         )
