@@ -13,12 +13,12 @@ from torch.utils.tensorboard import SummaryWriter
 import wandb
 from datasets import DatasetFactory
 from models import ModelFactory
+from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
+from torch_geometric.utils import add_self_loops, to_dense_adj, to_networkx
 from utils.config import Config
 from utils.eval_metrics import metrics
 from utils.logs import Logger
-from torch_geometric.utils import to_networkx, add_self_loops, to_dense_adj
-from torch_geometric.data import Data
 
 config = Config()
 logger = Logger()
@@ -53,6 +53,7 @@ def grid_4_neighbors(rows, cols):
     # Transpose to match COO format
     return edge_index.t()
 
+
 def dirichlet_energy(x, edge_index):
     # x is a N by F tensor, where N is the number of nodes and F is the number of features
     # edge_index is a 2 by E tensor, where E is the number of edges
@@ -65,7 +66,7 @@ def dirichlet_energy(x, edge_index):
     # Compute the Laplacian matrix
     lap = deg - adj
     print(lap.shape)
-    print(x.shape)
+    print(x)
     print(torch.mm(torch.mm(x.t(), lap), x).shape)
     # Compute the Dirichlet energy
     energy = torch.trace(torch.mm(torch.mm(x.t(), lap), x))
@@ -75,7 +76,6 @@ def dirichlet_energy(x, edge_index):
 
 
 class BaseTester:
-
     def __init__(self):
         self.model = None
         self.transform_config = None
@@ -83,8 +83,31 @@ class BaseTester:
         self.input_dim = -1
         self.output_dim = -1
 
+        self._make_output_dir()
+        if config["wandb"]["enable"]:
+            self.run = wandb.init(
+                entity=config["wandb"]["entity"],
+                project=config["wandb"]["project"],
+                group=config["wandb"]["group"],
+                config=config.get_config(),
+                dir=self.wandb_dir,
+                id=self.id,
+            )
+        
         self.prepare_dataset()
         self.prepare_model()
+
+    def _make_output_dir(self):
+        experiments_folder = config.get_subpath("output")
+        self.id = name_stem = config.get_name_stem()
+        self.output_dir = os.path.join(experiments_folder, name_stem)
+
+        os.makedirs(experiments_folder, exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=False)
+
+        self.wandb_dir = os.path.join(self.output_dir, "wandb")
+
+        os.makedirs(self.wandb_dir, exist_ok=False)
 
     def prepare_dataset(self):
         logger.info("Preparing dataset")
@@ -92,7 +115,7 @@ class BaseTester:
         x = torch.rand(100, 1)
 
         self.dataset = Data(x=x, edge_index=edge_index)
-         
+
         self.input_dim, self.output_dim = 1, 64
 
     def prepare_model(self):
@@ -102,5 +125,4 @@ class BaseTester:
         self.model.to(config["device"])
 
     def test(self):
-        return dirichlet_energy(self.model(self.dataset), self.dataset.edge_index)
-
+        return dirichlet_energy(self.model(self.dataset)[0], self.dataset.edge_index)

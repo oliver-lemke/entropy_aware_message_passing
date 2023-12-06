@@ -1,10 +1,6 @@
 import torch
-<<<<<<< HEAD
-from physics import Entropy
-=======
 
 from physics.physics import Entropy
->>>>>>> main
 
 
 def genererate_random_graph(n, d):
@@ -15,11 +11,6 @@ def genererate_random_graph(n, d):
 
     # compute random binary adjacency matrix
     A = torch.randint(2, size=(n, n), dtype=torch.float32)
-<<<<<<< HEAD
-    
-=======
-
->>>>>>> main
     # compute degree matrix
     D = torch.diag(torch.sum(A, dim=0))
 
@@ -52,27 +43,12 @@ def test_physics():
 
         result.append(sum)
 
-<<<<<<< HEAD
-    result = 1/2*torch.stack(result)
-=======
     result = 1 / 2 * torch.stack(result)
->>>>>>> main
 
     result2 = []
     for i in range(n):
         sum = 0
         for j in range(n):
-<<<<<<< HEAD
-            sum += A[i, j] * X[i] @ X[i] - 2 * A[i, j] * X[i] @ X[j] + A[i, j] * X[j] @ X[j]
-
-        result2.append(sum)
-
-    result2 = 1/2*torch.stack(result2)
-
-    res1 = torch.einsum("jk,ij,jk->i", X, L, X)
-    res2 = torch.einsum("ik,ij,jk->i", X, A, X)
-    energies = 1/2*(res1 - 2 * res2)
-=======
             sum += (
                 A[i, j] * X[i] @ X[i]
                 - 2 * A[i, j] * X[i] @ X[j]
@@ -86,16 +62,11 @@ def test_physics():
     res1 = torch.einsum("jk,ij,jk->i", X, L, X)
     res2 = torch.einsum("ik,ij,jk->i", X, A, X)
     energies = 1 / 2 * (res1 - 2 * res2)
->>>>>>> main
 
     res1 = torch.einsum("ij,ik,ik->i", A, X, X)
     res2 = torch.einsum("ij,ik,jk->i", A, X, X)
     res3 = torch.einsum("ij,jk,jk->i", A, X, X)
-<<<<<<< HEAD
-    energies2 = 1/2*(res1 - 2 * res2 + res3)
-=======
     energies2 = 1 / 2 * (res1 - 2 * res2 + res3)
->>>>>>> main
 
     assert torch.allclose(result, energies)  # E.dirichlet_energy(X)
     print("DIRICHLET ENERGY: TEST PASSED!")
@@ -103,17 +74,12 @@ def test_physics():
     assert torch.allclose(result2, energies2)
     print("DIRICHLET ENERGY 2: TEST PASSED!")
 
-<<<<<<< HEAD
-
-    print(torch.sum(result < 0), torch.sum(result2 < 0), torch.sum(energies < 0), torch.sum(energies2 < 0))
-=======
     print(
         torch.sum(result < 0),
         torch.sum(result2 < 0),
         torch.sum(energies < 0),
         torch.sum(energies2 < 0),
     )
->>>>>>> main
 
     assert torch.allclose(result, result2)
     print("DIRICHLET ENERGY 3: TEST PASSED!")

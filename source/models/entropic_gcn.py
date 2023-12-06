@@ -58,12 +58,6 @@ class EntropicGCN(nn.Module):
 
         if self.A is None:
             self.A = tg.utils.to_dense_adj(data.edge_index).squeeze()
-<<<<<<< HEAD
-
-        embedding = super().forward(data)
-
-        return embedding + self.weight * self.gradient_entropy(embedding)
-=======
             self.energy_normalization = self.compute_energy_normalization()
 
         x, edge_index = data.x, data.edge_index
@@ -86,7 +80,6 @@ class EntropicGCN(nn.Module):
             embedding + self.weight * self.gradient_entropy(embedding),
             intermediate_representations,
         )
->>>>>>> main
 
     def entropy(self, X):
         """Compute the entropy of the graph embedding X
@@ -108,9 +101,6 @@ class EntropicGCN(nn.Module):
             X (torch.tensor, shape NxN): graph embedding
         """
 
-<<<<<<< HEAD
-        return torch.sum(self.dirichlet_energy(X))
-=======
         return torch.mean(self.dirichlet_energy(X))
 
     def compute_energy_normalization(self):
@@ -125,7 +115,6 @@ class EntropicGCN(nn.Module):
         normalization = 1 / torch.sqrt(degrees * self.hidden_dim)
 
         return normalization
->>>>>>> main
 
     def dirichlet_energy(self, X):
         """Comute Dirichlet Energie for graph embedding X
@@ -140,16 +129,8 @@ class EntropicGCN(nn.Module):
 
         energies = 1 / 2 * (res1 - 2 * res2 + res3)
 
-<<<<<<< HEAD
-        # print(torch.sum(energies < 0))
-        # print(energies[torch.where(energies < 0)])
-        # print(res1[torch.where(energies < 0)])
-        # print(res2[torch.where(energies < 0)])
-        # print(res3[torch.where(energies < 0)])
-=======
         if self.normalize_energies:
             energies = energies * self.energy_normalization
->>>>>>> main
 
         # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
         # FIXME still, not sure why this is happening. We should see whether this issue goes away
@@ -172,11 +153,7 @@ class EntropicGCN(nn.Module):
         # return softmax of energies scaled by temperature
         # adding an epsilon is a hack to avoid log(0) = -inf.
         # x*ln(x) goes to 0 as x goes to 0, so this is okay
-<<<<<<< HEAD
-        distribution = torch.softmax(-energies / self.T, dim=0) + 1e-10
-=======
         distribution = torch.softmax(-energies / self.temperature, dim=0) + 1e-10
->>>>>>> main
 
         return distribution
 
@@ -185,16 +162,6 @@ class EntropicGCN(nn.Module):
         S = self.entropy(X)
         P_bar = P * (S + torch.log(P))
 
-<<<<<<< HEAD
-        # print(f"P: {torch.sum(~torch.isfinite(P))}")
-        # print(f"S: {torch.sum(~torch.isfinite(S))}")
-        # print(f"P_bar: {torch.sum(~torch.isfinite(P_bar))}")
-
-        if torch.sum(~torch.isfinite(S)) > 0:
-            print(torch.min(P), torch.max(P))
-
-=======
->>>>>>> main
         return P_bar
 
     def gradient_entropy(self, X):
@@ -204,9 +171,6 @@ class EntropicGCN(nn.Module):
         res3 = torch.einsum("ij,jk,i->ik", self.A, X, P_bar)
         res4 = torch.einsum("ij,jk,j->ik", self.A, X, P_bar)
 
-<<<<<<< HEAD
-        return 1 / self.T * (res1 + res2 - res3 - res4)
-=======
         result = 1 / self.temperature * (res1 + res2 - res3 - res4)
 
         if self.normalize_energies:
@@ -234,4 +198,3 @@ class EntropicGCN(nn.Module):
         """
 
         return result
->>>>>>> main

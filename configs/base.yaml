@@ -14,6 +14,9 @@ note: "init"
 # can be any in ["basic_gcn", "hrnet_gcn"]
 model_type: "basic_gcn"
 
+# can be any in ["train", "test"]
+run_type: "train"
+
 model_parameters:
     basic_gcn:
         pretrained_weights: null

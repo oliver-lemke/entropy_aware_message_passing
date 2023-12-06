@@ -1,12 +1,18 @@
-from trainer.base_trainer import BaseTrainer
 from tester.base_tester import BaseTester
+from trainer.base_trainer import BaseTrainer
+from utils.config import Config
+
+config = Config()
 
 
 def main():
-    # agent = BaseTrainer()
-    # agent.train()
-    tester = BaseTester()
-    print(tester.test())
+
+    if config["run_type"] == "train":
+        agent = BaseTrainer()
+        agent.train()
+    elif config["run_type"] == "test":
+        tester = BaseTester()
+        print(tester.test())
 
 
 if __name__ == "__main__":
