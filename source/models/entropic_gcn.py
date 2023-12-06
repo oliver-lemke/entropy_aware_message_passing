@@ -48,14 +48,14 @@ class EntropicGCN(nn.Module):
         temperature_params = params["temperature"]
         temperature_value = temperature_params["value"]
         if temperature_params["learnable"]:
-            self.temperature = nn.Parameter(torch.tensor([temperature_value]))
+            self.temperature = nn.Parameter(torch.tensor(temperature_value))
         else:
             self.temperature = temperature_value
 
         weight_params = params["weight"]
         weight_value = weight_params["value"]
         if weight_params["learnable"]:
-            self.weight = nn.Parameter(torch.tensor([weight_value]))
+            self.weight = nn.Parameter(torch.tensor(weight_value))
         else:
             self.weight = weight_value
 

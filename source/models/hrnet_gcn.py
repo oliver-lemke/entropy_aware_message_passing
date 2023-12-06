@@ -146,3 +146,7 @@ class HRNetGCN(nn.Module):
         out = self.down_projection(out)
         int_reps["final"] = out
         return out, int_reps
+
+    def clamp_learnables(self):
+        # no learnable parameters
+        pass

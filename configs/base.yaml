@@ -133,6 +133,8 @@ save_names:
 
 wandb:
     enable: True
+    # whether to plot extra plots
+    extended: True
     entity: "gnn_dl"
     project: "Init Tests"
     group: null
