@@ -12,7 +12,7 @@ note: "init"
 
 # the type of solution to run
 # can be any in ["basic_gcn", "hrnet_gcn"]
-model_type: "basic_gcn"
+model_type: "entropic_gcn"
 
 model_parameters:
     basic_gcn:
