@@ -19,9 +19,18 @@ from torch_geometric.utils import add_self_loops, to_dense_adj, to_networkx
 from utils.config import Config
 from utils.eval_metrics import metrics
 from utils.logs import Logger
+from physics.physics import Entropy
+
 
 config = Config()
 logger = Logger()
+
+
+def new_config() -> Config:
+    config = Config()
+    config["wandb"]["enable"] = True
+    config["wandb"]["project"] = "energy-per-layer-testing"
+    return config
 
 
 def grid_4_neighbors(rows, cols):
@@ -65,11 +74,8 @@ def dirichlet_energy(x, edge_index):
 
     # Compute the Laplacian matrix
     lap = deg - adj
-    print(lap.shape)
-    print(x)
-    print(torch.mm(torch.mm(x.t(), lap), x).shape)
     # Compute the Dirichlet energy
-    energy = torch.trace(torch.mm(torch.mm(x.t(), lap), x))
+    energy = torch.mean(torch.diag(torch.mm(torch.mm(x.t(), lap), x)))
 
     # Return the energy
     return energy
@@ -94,8 +100,6 @@ class BaseTester:
                 id=self.id,
             )
         
-        self.prepare_dataset()
-        self.prepare_model()
 
     def _make_output_dir(self):
         experiments_folder = config.get_subpath("output")
@@ -108,6 +112,7 @@ class BaseTester:
         self.wandb_dir = os.path.join(self.output_dir, "wandb")
 
         os.makedirs(self.wandb_dir, exist_ok=False)
+
 
     def prepare_dataset(self):
         logger.info("Preparing dataset")
@@ -124,5 +129,26 @@ class BaseTester:
         )
         self.model.to(config["device"])
 
-    def test(self):
-        return dirichlet_energy(self.model(self.dataset)[0], self.dataset.edge_index)
+    def calculate_energy(self):
+        A = to_dense_adj(self.dataset.edge_index).squeeze()
+        entropy = Entropy(T=1.0, A=A)
+        # energy = dirichlet_energy(self.model(self.dataset)[0], self.dataset.edge_index)
+        # return energy
+        return entropy.dirichlet_energy(self.model(self.dataset)[0]).mean()
+
+    def test_energy_per_layer(self):
+        log_dict = {}
+        # for model_type in ["basic_gcn"]:
+        for model_type in ["basic_gcn", "hrnet_gcn", "entropic_gcn"]:
+            data = []
+            config["model_type"] = model_type
+            for depth in range(10, 1000, 100):
+                config["model_parameters"][model_type]["depth"] = depth
+                self.prepare_dataset()
+                self.prepare_model()
+                data.append((depth, self.calculate_energy()))
+            energy_table = wandb.Table(data=data, columns=["depth", "energy"])
+            log_dict[f"energy/{model_type}"] = wandb.plot.line(
+                energy_table, "depth", "energy", title=f"Energy as a function of model depth for {model_type}"
+            )
+        wandb.log(log_dict)

@@ -12,7 +12,7 @@ def main():
         agent.train()
     elif config["run_type"] == "test":
         tester = BaseTester()
-        print(tester.test())
+        tester.test_energy_per_layer()
 
 
 if __name__ == "__main__":
