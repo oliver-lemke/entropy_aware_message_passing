@@ -11,7 +11,7 @@ note: "init"
 #######################################################################################
 
 # the type of solution to run
-# can be any in ["basic_gcn", "hrnet_gcn"]
+# can be any in ["basic_gcn", "hrnet_gcn", "entropic_gcn"]
 model_type: "entropic_gcn"
 
 model_parameters:

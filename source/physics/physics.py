@@ -16,6 +16,7 @@ class Entropy:
         # TODO: implement everything with sparse matrices. Don't use adjacency matrix, but edge_index
         self.A = None
         self.L = None
+        self.D = None
 
         # adjacency matrix
         self.update_adj(A)
@@ -30,8 +31,8 @@ class Entropy:
         self.A = A
 
         # given A, compute L
-        D = torch.diag(torch.sum(A, dim=0))
-        self.L = D + A
+        self.D = torch.diag(torch.sum(A, dim=0))
+        self.L = self.D + A
 
     def entropy(self, X, temperature):
         """Compute the entropy of the graph embedding X
@@ -61,10 +62,12 @@ class Entropy:
         """
 
         # compute degree of each node
-        degrees = torch.sum(self.A, dim=1)
+        # degrees = torch.sum(self.A, dim=1)
+        degrees = torch.diagonal(self.D, 0)
 
         # compute normalization
         norm = 1 / torch.sqrt(degrees * dim)
+
         return norm.unsqueeze(-1)
 
     def dirichlet_energy(self, X, normalize_energies: bool = False):
@@ -81,7 +84,7 @@ class Entropy:
         energies = 1 / 2 * (res1 - 2 * res2 + res3)
 
         if normalize_energies:
-            energies = energies * self.compute_energy_normalization(energies.shape[0])
+            energies = energies * self.compute_energy_normalization(X.shape[1])
 
         # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
         # FIXME still, not sure why this is happening. We should see whether this issue goes away
@@ -125,7 +128,7 @@ class Entropy:
         result = 1 / temperature * (res1 + res2 - res3 - res4)
 
         if normalize_energies:
-            result = result * self.compute_energy_normalization(result.shape[0])
+            result = result * self.compute_energy_normalization(X.shape[1])
 
         """
         print(result)
