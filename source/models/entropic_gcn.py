@@ -18,8 +18,8 @@ class EntropicLayer(nn.Module):
     def forward(self, x, edge_index, A, weight, temperature, norm_energies):
         x = self.gcn_conv(x, edge_index)
         entropy = Entropy(A)
-        # with torch.no_grad():
-        entropy_gradient = entropy.gradient_entropy(x, temperature, norm_energies)
+        with torch.no_grad():
+            entropy_gradient = entropy.gradient_entropy(x, temperature, norm_energies)
         x = x + weight * entropy_gradient
         return x
 
