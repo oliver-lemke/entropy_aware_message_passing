@@ -18,8 +18,8 @@ class EntropicLayer(nn.Module):
     def forward(self, x, edge_index, A, weight, temperature, norm_energies):
         x = self.gcn_conv(x, edge_index)
         entropy = Entropy(A)
-        with torch.no_grad():
-            entropy_gradient = entropy.gradient_entropy(x, temperature, norm_energies)
+        # with torch.no_grad():
+        entropy_gradient = entropy.gradient_entropy(x, temperature, norm_energies)
         x = x + weight * entropy_gradient
         return x
 
@@ -41,7 +41,7 @@ class EntropicGCN(nn.Module):
         )
         self.conv_out = tnn.GCNConv(self.hidden_dim, output_dim)
         self.relu = nn.ReLU()
-        self.norm = nn.LayerNorm(self.hidden_dim)
+        # self.norm = nn.LayerNorm(self.hidden_dim)
 
         temperature_params = self.params["temperature"]
         temperature_value = temperature_params["value"]
@@ -65,7 +65,7 @@ class EntropicGCN(nn.Module):
         # TODO
         # 1. switch to efficient (sparse?) framework
         # 2. once implemented, run tests whether this actually works
-        # 3. in particular, check if energies are potitive
+        # 3. in particular, check if energies are positive
         # 4. maybe track the energy during training as a metric?!
 
     def forward(self, data):
@@ -95,7 +95,7 @@ class EntropicGCN(nn.Module):
                 self.normalize_energies,
             )
             x = self.relu(x)
-            x = self.norm(x)
+            # x = self.norm(x)
             intermediate_representations[idx] = x
             idx += 1
 
