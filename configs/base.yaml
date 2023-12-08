@@ -95,6 +95,8 @@ dataset: "planetoid"
 dataset_parameters:
     planetoid:
         name: "Cora"
+    long_range:
+        name: "PascalVOC-SP"
 
 
 #######################################################################################

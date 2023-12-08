@@ -1,4 +1,4 @@
-from datasets import faust, mnist, planetoid
+from datasets import faust, mnist, planetoid, long_range
 from datasets.base import BaseDataset
 from utils.config import Config
 from utils.logs import Logger
@@ -13,6 +13,7 @@ class DatasetFactory:
             "planetoid": planetoid.PlanetoidDataset,
             "faust": faust.FaustDataset,
             "mnist": mnist.MNISTDataset,
+            "long_range": long_range.LongRangeDataset,
         }
 
     def get_dataset(self, *args, **kwargs) -> BaseDataset:
