@@ -62,6 +62,8 @@ def grid_4_neighbors(rows, cols):
     return edge_index.t()
 
 
+# UNUSED
+"""
 def dirichlet_energy(x, edge_index):
     # x is a N by F tensor, where N is the number of nodes and F is the number of features
     # edge_index is a 2 by E tensor, where E is the number of edges
@@ -78,6 +80,7 @@ def dirichlet_energy(x, edge_index):
 
     # Return the energy
     return energy
+"""
 
 
 class BaseTester:
@@ -98,6 +101,9 @@ class BaseTester:
                 dir=self.wandb_dir,
                 id=self.id,
             )
+
+        # initialize temperature parameters
+        self.T = 1.0
 
     def _make_output_dir(self):
         experiments_folder = config.get_subpath("output")
@@ -120,6 +126,10 @@ class BaseTester:
 
         self.input_dim, self.output_dim = 1, 64
 
+        # initialize Entropy class
+        A = to_dense_adj(self.dataset.edge_index).squeeze()
+        self.entropy = Entropy(A=A)
+
     def prepare_model(self):
         self.model, _ = ModelFactory().get_model(
             input_dim=self.input_dim, output_dim=self.output_dim
@@ -127,28 +137,40 @@ class BaseTester:
         self.model.to(config["device"])
 
     def calculate_energy(self):
-        A = to_dense_adj(self.dataset.edge_index).squeeze()
-        entropy = Entropy(T=1.0, A=A)
+        # A = to_dense_adj(self.dataset.edge_index).squeeze()
+        # entropy = Entropy(T=1.0, A=A)
         # energy = dirichlet_energy(self.model(self.dataset)[0], self.dataset.edge_index)
         # return energy
-        return entropy.dirichlet_energy(self.model(self.dataset)[0]).mean()
+        return self.entropy.total_dirichlet_energy(self.model(self.dataset)[0])
+
+    def calculate_entropy(self):
+        return self.entropy.entropy(self.model(self.dataset)[0], self.T)
 
     def test_energy_per_layer(self):
         log_dict = {}
         # for model_type in ["basic_gcn"]:
         for model_type in ["basic_gcn", "hrnet_gcn", "entropic_gcn"]:
-            data = []
+            energy_data = []
+            entropy_data = []
             config["model_type"] = model_type
             for depth in range(10, 1000, 100):
                 config["model_parameters"][model_type]["depth"] = depth
                 self.prepare_dataset()
                 self.prepare_model()
-                data.append((depth, self.calculate_energy()))
-            energy_table = wandb.Table(data=data, columns=["depth", "energy"])
+                energy_data.append((depth, self.calculate_energy()))
+                entropy_data.append((depth, self.calculate_entropy()))
+            energy_table = wandb.Table(data=energy_data, columns=["depth", "energy"])
+            entropy_table = wandb.Table(data=entropy_data, columns=["depth", "entropy"])
             log_dict[f"energy/{model_type}"] = wandb.plot.line(
                 energy_table,
                 "depth",
                 "energy",
                 title=f"Energy as a function of model depth for {model_type}",
+            )
+            log_dict[f"entropy/{model_type}"] = wandb.plot.line(
+                entropy_table,
+                "depth",
+                "entropy",
+                title=f"Entropy as a function of model depth for {model_type}",
             )
         wandb.log(log_dict)

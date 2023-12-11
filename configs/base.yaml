@@ -15,7 +15,7 @@ note: "init"
 model_type: "entropic_gcn"
 
 # can be any in ["train", "test"]
-run_type: "train"
+run_type: "test"
 
 model_parameters:
     basic_gcn:
@@ -115,7 +115,7 @@ hyperparameters:
         batch_size: 4096
 
 # device on which to train
-device: "cuda"
+device: "cpu"
 
 # whether to resume training from earlier model
 resume_training: False
