@@ -21,6 +21,12 @@ class EntropicLayer(nn.Module):
         with torch.no_grad():
             entropy_gradient = entropy.gradient_entropy(x, temperature, norm_energies)
         x = x + weight * entropy_gradient
+
+        #torch.set_printoptions(precision=100)
+        #print(x)
+        #print(weight * entropy_gradient)
+        #print("\n")
+
         return x
 
 

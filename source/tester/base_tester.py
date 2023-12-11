@@ -149,7 +149,7 @@ class BaseTester:
     def test_energy_per_layer(self):
         log_dict = {}
         # for model_type in ["basic_gcn"]:
-        for model_type in ["basic_gcn", "hrnet_gcn", "entropic_gcn"]:
+        for model_type in ["entropic_gcn", "basic_gcn"]:  # hrnet_gcn
             energy_data = []
             entropy_data = []
             config["model_type"] = model_type
