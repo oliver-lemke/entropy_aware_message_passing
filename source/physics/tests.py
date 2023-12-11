@@ -11,7 +11,6 @@ def genererate_random_graph(n, d):
 
     # compute random binary adjacency matrix
     A = torch.randint(2, size=(n, n), dtype=torch.float32)
-
     # compute degree matrix
     D = torch.diag(torch.sum(A, dim=0))
 
