@@ -122,7 +122,7 @@ class BaseTester:
         edge_index, _ = add_self_loops(grid_4_neighbors(10, 10))
         x = torch.rand(100, 1)
 
-        self.dataset = Data(x=x, edge_index=edge_index)
+        self.dataset = Data(x=x, edge_index=edge_index).to(config["device"])
 
         self.input_dim, self.output_dim = 1, 64
 
