@@ -128,7 +128,7 @@ class BaseTester:
 
         # initialize Entropy class
         A = to_dense_adj(self.dataset.edge_index).squeeze()
-        self.entropy = Entropy(A=A)
+        self.entropy = Entropy(A=A, T=self.T, normalize_energies=True)
 
     def prepare_model(self):
         self.model, _ = ModelFactory().get_model(
@@ -144,7 +144,7 @@ class BaseTester:
         return self.entropy.total_dirichlet_energy(self.model(self.dataset)[0])
 
     def calculate_entropy(self):
-        return self.entropy.entropy(self.model(self.dataset)[0], self.T)
+        return self.entropy.entropy(self.model(self.dataset)[0])  # , self.T)
 
     def test_energy_per_layer(self):
         log_dict = {}

@@ -4,7 +4,7 @@ import torch
 
 
 class Entropy:
-    def __init__(self, A=0):
+    def __init__(self, A=0, T=1.0, normalize_energies=False):
         """Class to handle the entropy of a given Graph
 
         Args:
@@ -17,6 +17,9 @@ class Entropy:
         self.A = None
         self.L = None
         self.D = None
+        self.T = T
+
+        self.normalize_energies = normalize_energies
 
         # adjacency matrix
         self.update_adj(A)
@@ -34,14 +37,14 @@ class Entropy:
         self.D = torch.diag(torch.sum(A, dim=0))
         self.L = self.D + A
 
-    def entropy(self, X, temperature):
+    def entropy(self, X):
         """Compute the entropy of the graph embedding X
 
         Returns:
             float: entropy of X
         """
 
-        distribution = self.boltzmann_distribution(X, temperature)
+        distribution = self.boltzmann_distribution(X)
 
         S = -torch.sum(distribution * torch.log(distribution))
 
@@ -70,7 +73,7 @@ class Entropy:
 
         return norm.unsqueeze(-1)
 
-    def dirichlet_energy(self, X, normalize_energies: bool = False):
+    def dirichlet_energy(self, X):
         """Comute Dirichlet Energie for graph embedding X
 
         Returns:
@@ -83,8 +86,10 @@ class Entropy:
 
         energies = 1 / 2 * (res1 - 2 * res2 + res3)
 
-        if normalize_energies:
-            energies = energies * self.compute_energy_normalization(X.shape[1])
+        if self.normalize_energies:
+            energies = (
+                energies * self.compute_energy_normalization(X.shape[1]).squeeze()
+            )
 
         # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
         # FIXME still, not sure why this is happening. We should see whether this issue goes away
@@ -95,7 +100,7 @@ class Entropy:
 
         return energies
 
-    def boltzmann_distribution(self, X, temperature):
+    def boltzmann_distribution(self, X):
         """Compute Boltzmann distribution
 
         Returns:
@@ -107,27 +112,31 @@ class Entropy:
         # return softmax of energies scaled by temperature
         # adding an epsilon is a hack to avoid log(0) = -inf.
         # x*ln(x) goes to 0 as x goes to 0, so this is okay
-        distribution = torch.softmax(-energies / temperature, dim=0) + 1e-10
+        distribution = torch.softmax(-energies / self.T, dim=0) + 1e-10
 
         return distribution
 
-    def Pbar(self, X, temperature):
-        P = self.boltzmann_distribution(X, temperature)
-        S = self.entropy(X, temperature)
+    def Pbar(self, X):
+        P = self.boltzmann_distribution(X)
+        S = self.entropy(X)
         P_bar = P * (S + torch.log(P))
 
         return P_bar
 
-    def gradient_entropy(self, X, temperature: float, normalize_energies: bool = False):
-        P_bar = self.Pbar(X, temperature)
+    def free_energy(self, X):
+        return self.total_dirichlet_energy(X) - self.T * self.entropy(X)
+
+    def gradient_entropy(self, X):
+        P_bar = self.Pbar(X)
+
         res1 = torch.einsum("ij,ik,i->ik", self.A, X, P_bar)
         res2 = torch.einsum("ij,ik,j->ik", self.A, X, P_bar)
         res3 = torch.einsum("ij,jk,i->ik", self.A, X, P_bar)
         res4 = torch.einsum("ij,jk,j->ik", self.A, X, P_bar)
 
-        result = 1 / temperature * (res1 + res2 - res3 - res4)
+        result = (res1 + res2 - res3 - res4)  * 1 / self.T
 
-        if normalize_energies:
+        if self.normalize_energies:
             result = result * self.compute_energy_normalization(X.shape[1])
 
         """
