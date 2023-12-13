@@ -4,7 +4,7 @@ import torch
 
 
 class Entropy:
-    def __init__(self, A=0):
+    def __init__(self, A=0, normalize_energies=False):
         """Class to handle the entropy of a given Graph
 
         Args:
@@ -17,6 +17,8 @@ class Entropy:
         self.A = None
         self.L = None
         self.D = None
+
+        self.normalize_energies = normalize_energies
 
         # adjacency matrix
         self.update_adj(A)
@@ -70,7 +72,7 @@ class Entropy:
 
         return norm.unsqueeze(-1)
 
-    def dirichlet_energy(self, X, normalize_energies: bool = False):
+    def dirichlet_energy(self, X):
         """Comute Dirichlet Energie for graph embedding X
 
         Returns:
@@ -83,8 +85,8 @@ class Entropy:
 
         energies = 1 / 2 * (res1 - 2 * res2 + res3)
 
-        if normalize_energies:
-            energies = energies * self.compute_energy_normalization(X.shape[1])
+        if self.normalize_energies:
+            energies = energies * self.compute_energy_normalization(X.shape[1]).squeeze()
 
         # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
         # FIXME still, not sure why this is happening. We should see whether this issue goes away
@@ -118,7 +120,7 @@ class Entropy:
 
         return P_bar
 
-    def gradient_entropy(self, X, temperature: float, normalize_energies: bool = False):
+    def gradient_entropy(self, X, temperature: float):
         P_bar = self.Pbar(X, temperature)
         res1 = torch.einsum("ij,ik,i->ik", self.A, X, P_bar)
         res2 = torch.einsum("ij,ik,j->ik", self.A, X, P_bar)
@@ -127,7 +129,7 @@ class Entropy:
 
         result = 1 / temperature * (res1 + res2 - res3 - res4)
 
-        if normalize_energies:
+        if self.normalize_energies:
             result = result * self.compute_energy_normalization(X.shape[1])
 
         """
