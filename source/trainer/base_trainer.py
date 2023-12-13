@@ -228,7 +228,7 @@ class BaseTrainer:
     def _log(self, data, pred, loss, int_reps):
         # ENtropy Object
         A = torch_geometric.utils.to_dense_adj(data.edge_index).squeeze()
-        entropy = Entropy(T=1.0, A=A)
+        entropy = Entropy(A=A)
         # metrics
         self.model.eval()
         with torch.no_grad():
@@ -260,7 +260,7 @@ class BaseTrainer:
                 # calculate energy and entropy from intermediate representations
                 for layer, int_rep in int_reps.items():
                     energy_metric = entropy.dirichlet_energy(int_rep).mean()
-                    entropy_metric = entropy.entropy(int_rep)
+                    entropy_metric = entropy.entropy(int_rep, 1.0)
                     energies.append(energy_metric)
                     entropies.append(entropy_metric)
                     if isinstance(layer, int):

@@ -2,10 +2,26 @@ import torch
 from torch import nn
 
 import torch_geometric as tg
+from physics import physics
+from physics.physics import Entropy
 from torch_geometric import nn as tnn
 from utils.config import Config
 
 config = Config()
+
+
+class EntropicLayer(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super().__init__()
+        self.gcn_conv = tnn.GCNConv(input_dim, output_dim)
+
+    def forward(self, x, edge_index, A, weight, temperature, norm_energies):
+        x = self.gcn_conv(x, edge_index)
+        entropy = Entropy(A)
+        with torch.no_grad():
+            entropy_gradient = entropy.gradient_entropy(x, temperature, norm_energies)
+        x = x + weight * entropy_gradient
+        return x
 
 
 class EntropicGCN(nn.Module):
@@ -17,12 +33,15 @@ class EntropicGCN(nn.Module):
         depth = self.params["depth"]
         self.hidden_dim = self.params["hidden_dim"]
         self.convs = nn.ModuleList(
-            [tnn.GCNConv(input_dim, self.hidden_dim)]
-            + [tnn.GCNConv(self.hidden_dim, self.hidden_dim) for _ in range(depth - 1)]
+            [EntropicLayer(input_dim, self.hidden_dim)]
+            + [
+                EntropicLayer(self.hidden_dim, self.hidden_dim)
+                for _ in range(depth - 1)
+            ]
         )
         self.conv_out = tnn.GCNConv(self.hidden_dim, output_dim)
         self.relu = nn.ReLU()
-        self.norm = nn.LayerNorm(self.hidden_dim)
+        # self.norm = nn.LayerNorm(self.hidden_dim)
 
         temperature_params = self.params["temperature"]
         temperature_value = temperature_params["value"]
@@ -41,12 +60,12 @@ class EntropicGCN(nn.Module):
         self.normalize_energies = self.params["normalize_energies"]
 
         self.A = None
-        self.energy_normalization = None
+        self.entropy = None
 
         # TODO
         # 1. switch to efficient (sparse?) framework
         # 2. once implemented, run tests whether this actually works
-        # 3. in particular, check if energies are potitive
+        # 3. in particular, check if energies are positive
         # 4. maybe track the energy during training as a metric?!
 
     def forward(self, data):
@@ -58,7 +77,8 @@ class EntropicGCN(nn.Module):
 
         if self.A is None:
             self.A = tg.utils.to_dense_adj(data.edge_index).squeeze()
-            self.energy_normalization = self.compute_energy_normalization()
+        if self.entropy is None:
+            self.entropy = physics.Entropy(self.A)
 
         x, edge_index = data.x, data.edge_index
         intermediate_representations = {}  # {0: x}
@@ -66,9 +86,16 @@ class EntropicGCN(nn.Module):
 
         # First Graph Convolution
         for conv in self.convs:
-            x = conv(x, edge_index)
+            x = conv(
+                x,
+                edge_index,
+                self.A,
+                self.weight,
+                self.temperature,
+                self.normalize_energies,
+            )
             x = self.relu(x)
-            x = self.norm(x)
+            # x = self.norm(x)
             intermediate_representations[idx] = x
             idx += 1
 
@@ -77,127 +104,9 @@ class EntropicGCN(nn.Module):
         intermediate_representations["final"] = embedding
 
         return (
-            embedding + self.weight * self.gradient_entropy(embedding),
+            embedding,
             intermediate_representations,
         )
-
-    def entropy(self, X):
-        """Compute the entropy of the graph embedding X
-
-        Returns:
-            float: entropy of X
-        """
-
-        distribution = self.boltzmann_distribution(X)
-
-        S = -torch.sum(distribution * torch.log(distribution))
-
-        return S
-
-    def total_dirichlet_energy(self, X):
-        """Compute the total dirichlet energy of the graph embedding X
-
-        Args:
-            X (torch.tensor, shape NxN): graph embedding
-        """
-
-        return torch.mean(self.dirichlet_energy(X))
-
-    def compute_energy_normalization(self):
-        """
-        Compute normalization for each nodes dirichlet energy.
-        """
-
-        # compute degree of each node
-        degrees = torch.sum(self.A, dim=1)
-
-        # compute normalization
-        normalization = 1 / torch.sqrt(degrees * self.hidden_dim)
-
-        return normalization
-
-    def dirichlet_energy(self, X):
-        """Comute Dirichlet Energie for graph embedding X
-
-        Returns:
-            torch.tensor, shape N: Dirichlet Energies for each node
-        """
-
-        res1 = torch.einsum("ij,ik,ik->i", self.A, X, X)
-        res2 = torch.einsum("ij,ik,jk->i", self.A, X, X)
-        res3 = torch.einsum("ij,jk,jk->i", self.A, X, X)
-
-        energies = 1 / 2 * (res1 - 2 * res2 + res3)
-
-        if self.normalize_energies:
-            energies = energies * self.energy_normalization
-
-        # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
-        # FIXME still, not sure why this is happening. We should see whether this issue goes away
-        # with sparse matrices
-        energies.clamp(min=1e-10)
-
-        # print(f"energies: {torch.sum(~torch.isfinite(energies))}")
-
-        return energies
-
-    def boltzmann_distribution(self, X):
-        """Compute Boltzmann distribution
-
-        Returns:
-            torch.tensor, shape N: Boltzmann distribution given energies and temperature
-        """
-
-        energies = self.dirichlet_energy(X)
-
-        # return softmax of energies scaled by temperature
-        # adding an epsilon is a hack to avoid log(0) = -inf.
-        # x*ln(x) goes to 0 as x goes to 0, so this is okay
-        distribution = torch.softmax(-energies / self.temperature, dim=0) + 1e-10
-
-        return distribution
-
-    def Pbar(self, X):
-        P = self.boltzmann_distribution(X)
-        S = self.entropy(X)
-        P_bar = P * (S + torch.log(P))
-
-        return P_bar
-
-    def gradient_entropy(self, X):
-        P_bar = self.Pbar(X)
-        res1 = torch.einsum("ij,ik,i->ik", self.A, X, P_bar)
-        res2 = torch.einsum("ij,ik,j->ik", self.A, X, P_bar)
-        res3 = torch.einsum("ij,jk,i->ik", self.A, X, P_bar)
-        res4 = torch.einsum("ij,jk,j->ik", self.A, X, P_bar)
-
-        result = 1 / self.temperature * (res1 + res2 - res3 - res4)
-
-        if self.normalize_energies:
-            result = result * self.energy_normalization[:, None]
-
-        """
-        print(result)
-        test = self.Pbar(X)
-
-        res = []
-        for i in range(X.shape[0]):
-            sum = 0
-            for j in range(X.shape[0]):
-                contrib = self.energy_normalization[i]*(
-                    self.A[i, j] * X[i] * test[i]
-                    + self.A[i, j] * X[i] * test[j]
-                    - self.A[i, j] * X[j] * test[i]
-                    - self.A[i, j] * X[j] * test[j]
-                )
-                sum += contrib
-            res.append(sum)
-
-            print(1 / self.temperature * sum)
-
-        """
-
-        return result
 
     def clamp_learnables(self):
         if self.params["temperature"]["learnable"]:
