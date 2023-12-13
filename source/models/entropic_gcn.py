@@ -21,9 +21,13 @@ class EntropicLayer(nn.Module):
         auto_grad = False
         with torch.no_grad():
             if auto_grad:
+
                 def func(x):
                     return torch.exp(entropy.entropy(x))
-                entropy_gradient = torch.autograd.functional.jacobian(entropy.entropy, x)
+
+                entropy_gradient = torch.autograd.functional.jacobian(
+                    entropy.entropy, x
+                )
             else:
                 entropy_gradient = entropy.gradient_entropy(x)
 
@@ -86,7 +90,9 @@ class EntropicGCN(nn.Module):
         if self.A is None:
             self.A = tg.utils.to_dense_adj(data.edge_index).squeeze()
         if self.entropy is None:
-            self.entropy = physics.Entropy(self.A, self.temperature, normalize_energies=self.normalize_energies)
+            self.entropy = physics.Entropy(
+                self.A, self.temperature, normalize_energies=self.normalize_energies
+            )
 
         x, edge_index = data.x, data.edge_index
         intermediate_representations = {}  # {0: x}
