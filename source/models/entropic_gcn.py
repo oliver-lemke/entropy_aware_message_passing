@@ -77,9 +77,9 @@ class EntropicGCN(nn.Module):
         if self.A is None:
             self.A = tg.utils.to_dense_adj(data.edge_index).squeeze()
         if self.entropy is None:
-            self.entropy = physics.Entropy(self.A,
-                                           norm_energy=self.norm_energy,
-                                           norm_dist=self.norm_dist)
+            self.entropy = physics.Entropy(
+                self.A, norm_energy=self.norm_energy, norm_dist=self.norm_dist
+            )
 
         x, edge_index = data.x, data.edge_index
         intermediate_representations = {}  # {0: x}
