@@ -86,7 +86,9 @@ class Entropy:
         energies = 1 / 2 * (res1 - 2 * res2 + res3)
 
         if self.normalize_energies:
-            energies = energies * self.compute_energy_normalization(X.shape[1]).squeeze()
+            energies = (
+                energies * self.compute_energy_normalization(X.shape[1]).squeeze()
+            )
 
         # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
         # FIXME still, not sure why this is happening. We should see whether this issue goes away

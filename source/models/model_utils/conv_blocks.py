@@ -28,12 +28,12 @@ class BasicGCNBlock(TransformBlock):
         super().__init__()
         self.conv = tnn.GCNConv(input_dim, output_dim)
         self.relu = nn.ReLU()
-        #self.norm = nn.LayerNorm(output_dim)
+        # self.norm = nn.LayerNorm(output_dim)
 
     def forward(self, x, edge_index):
         x = self.conv(x, edge_index)
         x = self.relu(x)
-        #x = self.norm(x)
+        # x = self.norm(x)
         return x
 
     @staticmethod
