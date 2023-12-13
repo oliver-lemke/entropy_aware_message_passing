@@ -123,7 +123,7 @@ class SimpleConvOutput(OutputBlock):
             + [nn.Linear(hidden_dim, hidden_dim) for _ in range(depth - 1)]
         )
         self.act = nn.ReLU()
-        self.norm = nn.LayerNorm(hidden_dim)
+        #self.norm = nn.LayerNorm(hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, 1)
 
         self.to(torch.device(config["device"]))
@@ -138,7 +138,7 @@ class SimpleConvOutput(OutputBlock):
         for layer in self.layers:
             x = layer(x)
             x = self.act(x)
-            x = self.norm(x)
+            #x = self.norm(x)
         x = self.output_layer(x)
         x = x.squeeze()
 
@@ -159,7 +159,7 @@ class SimpleAttentionOutput(OutputBlock):
         self.attention_layers = None
         self.layers = None
         self.act = None
-        self.norm = None
+        #self.norm = None
         self.output_layer = None
         self.softmax = None
         self.has_been_initialized = False
@@ -194,7 +194,7 @@ class SimpleAttentionOutput(OutputBlock):
             [nn.Linear(dim, hidden_dim)]
             + [nn.Linear(hidden_dim, hidden_dim) for _ in range(depth - 1)]
         )
-        self.norm = nn.LayerNorm(hidden_dim)
+        #self.norm = nn.LayerNorm(hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, dim)
 
         self.to(torch.device(config["device"]))
@@ -223,7 +223,7 @@ class SimpleAttentionOutput(OutputBlock):
         for layer in self.layers:
             x = layer(x)
             x = self.act(x)
-            x = self.norm(x)
+            #x = self.norm(x)
         x = self.output_layer(x)
 
         out = torch.sum(attention * x, dim=-2)
