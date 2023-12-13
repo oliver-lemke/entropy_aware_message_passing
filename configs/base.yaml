@@ -30,6 +30,7 @@ model_parameters:
             learnable: false
             value: 0.001
         normalize_energies: True
+        normalize_distribution: False
     hrnet_gcn:
         pretrained_weights: null
         depth: 8
