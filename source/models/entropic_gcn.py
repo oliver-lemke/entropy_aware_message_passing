@@ -3,7 +3,6 @@ from torch import nn
 
 import torch_geometric as tg
 from physics import physics
-from physics.physics import Entropy
 from torch_geometric import nn as tnn
 from utils.config import Config
 
@@ -15,11 +14,10 @@ class EntropicLayer(nn.Module):
         super().__init__()
         self.gcn_conv = tnn.GCNConv(input_dim, output_dim)
 
-    def forward(self, x, edge_index, A, weight, temperature, norm_energies):
+    def forward(self, x, edge_index, weight, temperature, entropy):
         x = self.gcn_conv(x, edge_index)
-        entropy = Entropy(A)
         with torch.no_grad():
-            entropy_gradient = entropy.gradient_entropy(x, temperature, norm_energies)
+            entropy_gradient = entropy.gradient_entropy(x, temperature)
         x = x + weight * entropy_gradient
         return x
 
@@ -78,7 +76,7 @@ class EntropicGCN(nn.Module):
         if self.A is None:
             self.A = tg.utils.to_dense_adj(data.edge_index).squeeze()
         if self.entropy is None:
-            self.entropy = physics.Entropy(self.A)
+            self.entropy = physics.Entropy(self.A, self.normalize_energies)
 
         x, edge_index = data.x, data.edge_index
         intermediate_representations = {}  # {0: x}
@@ -89,10 +87,9 @@ class EntropicGCN(nn.Module):
             x = conv(
                 x,
                 edge_index,
-                self.A,
                 self.weight,
                 self.temperature,
-                self.normalize_energies,
+                self.entropy,
             )
             x = self.relu(x)
             # x = self.norm(x)

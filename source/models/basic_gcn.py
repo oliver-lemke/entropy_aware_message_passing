@@ -21,7 +21,7 @@ class BasicGCN(nn.Module):
         )
         self.conv_out = tnn.GCNConv(hidden_dim, output_dim)
         self.relu = nn.ReLU()
-        self.norm = nn.LayerNorm(hidden_dim)
+        # self.norm = nn.LayerNorm(hidden_dim)
         logger.debug(str(self))
 
     def forward(self, data):
@@ -33,7 +33,7 @@ class BasicGCN(nn.Module):
         for conv in self.convs:
             x = conv(x, edge_index)
             x = self.relu(x)
-            x = self.norm(x)
+            # x = self.norm(x)
             intermediate_representations[idx] = x
             idx += 1
 

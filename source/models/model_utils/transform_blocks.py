@@ -40,7 +40,7 @@ class Full(TransformBlock):
             + [nn.Linear(hidden_dim, hidden_dim) for _ in range(depth - 1)]
         )
         self.act = nn.ReLU()
-        self.norm = nn.LayerNorm(hidden_dim)
+        # self.norm = nn.LayerNorm(hidden_dim)
         self.output_layer = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -48,7 +48,7 @@ class Full(TransformBlock):
         for layer in self.layers:
             out = layer(out)
             out = self.act(out)
-            out = self.norm(out)
+            # out = self.norm(out)
         out = self.output_layer(out)
 
         if self.residual:

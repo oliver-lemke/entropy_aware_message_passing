@@ -112,7 +112,7 @@ hyperparameters:
         batch_size: 4096
 
 # device on which to train
-device: "cuda"
+device: "cpu"
 
 # whether to resume training from earlier model
 resume_training: False
