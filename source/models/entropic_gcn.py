@@ -110,6 +110,6 @@ class EntropicGCN(nn.Module):
 
     def clamp_learnables(self):
         if self.params["temperature"]["learnable"]:
-            self.temperature = torch.clamp(self.temperature, min=1e-5)
+            self.temperature.data = torch.clamp(self.temperature, min=1e-5)
         if self.params["weight"]["learnable"]:
-            self.weight = torch.clamp(self.weight, min=1e-5)
+            self.weight.data = torch.clamp(self.weight, min=1e-5)
