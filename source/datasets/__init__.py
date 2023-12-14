@@ -1,4 +1,4 @@
-from datasets import faust, mnist, planetoid, long_range
+from datasets import faust, long_range, mnist, planetoid
 from datasets.base import BaseDataset
 from utils.config import Config
 from utils.logs import Logger

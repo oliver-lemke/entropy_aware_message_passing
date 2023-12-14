@@ -10,11 +10,11 @@ def main():
     if config["run_type"] == "train":
         if config["multi_graph_dataset"]:
             agent = MultiGraphTrainer()
-            agent.train()            
+            agent.train()
         else:
             agent = BaseTrainer()
             agent.train()
-            
+
     elif config["run_type"] == "test":
         tester = BaseTester()
         tester.test_energy_per_layer()
