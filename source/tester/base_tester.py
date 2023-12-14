@@ -105,9 +105,9 @@ class BaseTester:
         A = to_dense_adj(self.dataset.edge_index).squeeze()
 
         # TODO: load these bools from config
-        self.entropy = Entropy(A=A,
-                               norm_energy=self.norm_energy,
-                               norm_dist=self.norm_dist)
+        self.entropy = Entropy(
+            A=A, norm_energy=self.norm_energy, norm_dist=self.norm_dist
+        )
 
     def prepare_model(self):
         self.model, _ = ModelFactory().get_model(
