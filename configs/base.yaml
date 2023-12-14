@@ -96,6 +96,8 @@ output_block_args:
 
 # can be in ["planetoid", "faust", "mnist"]
 dataset: "planetoid"
+multi_graph_dataset: false
+
 dataset_parameters:
     planetoid:
         name: "Cora"
