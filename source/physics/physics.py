@@ -112,7 +112,7 @@ class Entropy:
         if self.norm_dist:
             distribution = torch.softmax(-energies / temperature, dim=0) + 1e-10
         else:
-            distribution = torch.exp(-energies / temperature)
+            distribution = torch.exp(-energies / temperature) + 1e-10
 
         return distribution
 

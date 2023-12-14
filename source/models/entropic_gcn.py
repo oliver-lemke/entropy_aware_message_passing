@@ -103,9 +103,24 @@ class EntropicGCN(nn.Module):
         embedding = self.conv_out(x, edge_index)
         intermediate_representations["final"] = embedding
 
+        # log parameters
+        if self.params["temperature"]["learnable"]:
+            temperature_data = self.temperature.data
+        else:
+            temperature_data = self.temperature
+
+        if self.params["weight"]["learnable"]:
+            weight_data = self.weight.data
+        else:
+            weight_data = self.weight
+
         return (
             embedding,
             intermediate_representations,
+            {
+                "parameters/temperature": temperature_data,
+                "parameters/weight": weight_data,
+            },
         )
 
     def clamp_learnables(self):
