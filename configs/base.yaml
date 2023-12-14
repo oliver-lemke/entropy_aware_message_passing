@@ -15,7 +15,7 @@ note: "init"
 model_type: "entropic_gcn"
 
 # can be any in ["train", "test"]
-run_type: "test"
+run_type: "train"
 
 model_parameters:
     basic_gcn:
