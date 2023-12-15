@@ -106,11 +106,11 @@ class MultiGraphTrainer(BaseTrainer):
         # gradient descent
         with torch.no_grad():
             self.optimizer.zero_grad()
-            pred, intermediate_representations = self.model(data)
+            pred, _ = self.model(data)
             loss = self.loss(pred, data.y)
             self.model.clamp_learnables()
 
-        self._log(data, pred, loss, intermediate_representations, False)
+        self._log(data, pred, loss)
 
     def one_epoch(self):
         logger.info(
@@ -193,7 +193,7 @@ class MultiGraphTrainer(BaseTrainer):
 
         self._log_all(scalar_metrics=scalar_metrics, other_wandb=other)
 
-    def _log_val(self, data, pred, loss, int_reps):
+    def _log_val(self, data, pred, loss):
         # ENtropy Object
         A = torch_geometric.utils.to_dense_adj(data.edge_index).squeeze()
         entropy = Entropy(A=A)
@@ -206,8 +206,8 @@ class MultiGraphTrainer(BaseTrainer):
             )
             # validation loss
             val_metrics["total_loss"] = loss.item()
-            if val_loss < self.prev_val_loss:
-                self.prev_val_loss = val_loss
+            if loss < self.prev_loss:
+                self.prev_loss = loss
                 self.best_checkpoint = True
         # prepare for logging
         val_metrics = add_prefix_to_dict(val_metrics, "val/")
