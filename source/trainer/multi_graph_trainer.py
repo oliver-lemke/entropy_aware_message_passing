@@ -110,7 +110,7 @@ class MultiGraphTrainer(BaseTrainer):
             loss = self.loss(pred, data.y)
             self.model.clamp_learnables()
 
-        self._log(data, pred, loss)
+        self._log_val(data, pred, loss)
 
     def one_epoch(self):
         logger.info(
