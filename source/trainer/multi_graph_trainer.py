@@ -104,12 +104,12 @@ class MultiGraphTrainer(BaseTrainer):
         data = data.to(config["device"])
 
         # gradient descent
-        self.optimizer.zero_grad()
-        pred, intermediate_representations = self.model(data)
-        loss = self.loss(pred, data.y)
-
         with torch.no_grad():
+            self.optimizer.zero_grad()
+            pred, intermediate_representations = self.model(data)
+            loss = self.loss(pred, data.y)
             self.model.clamp_learnables()
+
         self._log(data, pred, loss, intermediate_representations, False)
 
     def one_epoch(self):
@@ -193,7 +193,7 @@ class MultiGraphTrainer(BaseTrainer):
 
         self._log_all(scalar_metrics=scalar_metrics, other_wandb=other)
 
-        def _log_val(self, data, pred, loss, int_reps):
+    def _log_val(self, data, pred, loss, int_reps):
         # ENtropy Object
         A = torch_geometric.utils.to_dense_adj(data.edge_index).squeeze()
         entropy = Entropy(A=A)
@@ -209,15 +209,7 @@ class MultiGraphTrainer(BaseTrainer):
             if val_loss < self.prev_val_loss:
                 self.prev_val_loss = val_loss
                 self.best_checkpoint = True
-         # prepare for logging
+        # prepare for logging
         val_metrics = add_prefix_to_dict(val_metrics, "val/")
 
         self._log_all(scalar_metrics=val_metrics, other_wandb={})
-
-    def one_epoch(self):
-        logger.info(
-            f"Training epoch {self._epoch} / {config['hyperparameters']['train']['epochs']}"
-        )
-        for data in self.loader:
-            self.step(data)
-        self.scheduler.step()
