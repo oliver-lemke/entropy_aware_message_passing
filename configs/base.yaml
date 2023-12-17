@@ -15,7 +15,7 @@ note: "init"
 model_type: "entropic_gcn"
 
 # can be any in ["train", "test"]
-run_type: "test"
+run_type: "train"
 
 model_parameters:
     basic_gcn:
@@ -27,10 +27,10 @@ model_parameters:
         depth: 6
         hidden_dim: 256
         temperature:
-            learnable: false
+            learnable: False
             value: 1
         weight:
-            learnable: false
+            learnable: True
             value: 0.001
         normalize_energies: True
         normalize_distribution: False

@@ -41,7 +41,7 @@ class BasicGCN(nn.Module):
         x = self.conv_out(x, edge_index)
         intermediate_representations["final"] = x
 
-        return x, intermediate_representations
+        return x, intermediate_representations, {}
 
     def clamp_learnables(self):
         # no learnable parameters
