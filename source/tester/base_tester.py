@@ -124,11 +124,11 @@ class BaseTester:
     def test_energy_per_layer(self):
         log_dict = {}
         # for model_type in ["basic_gcn"]:
-        for model_type in ["basic_gcn", "entropic_gcn"]:
+        for model_type in config["tester"]["model_types"]:
             data_energy = []
             data_entropy = []
             config["model_type"] = model_type
-            for depth in range(10, 1000, 100):
+            for depth in config["tester"]["depths"]:
                 config["model_parameters"][model_type]["depth"] = depth
                 self.prepare_dataset()
                 self.prepare_model()
@@ -150,3 +150,7 @@ class BaseTester:
             )
 
         wandb.log(log_dict)
+        self._close()
+
+    def _close(self):
+        wandb.finish(exit_code=0, quiet=False)

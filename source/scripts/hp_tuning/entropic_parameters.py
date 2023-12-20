@@ -18,8 +18,8 @@ def main():
     model_depths = (16, 32, 64)
     temp_learns = (True, False)
     temps = (1e-1, 1e0, 1e1)
-    weight_learns = (True, False)
-    weights = (1e-1, 1e0, 1e1)
+    weight_learns = (False,)
+    weights = (1e-1, 5e-1, 1e0, 1e1)
     normalizes = (True, False)
 
     combinations = itertools.product(
