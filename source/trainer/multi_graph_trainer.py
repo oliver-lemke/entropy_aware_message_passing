@@ -5,6 +5,7 @@ import json
 import os
 import random
 import shutil
+from collections import defaultdict
 
 import numpy as np
 import torch
@@ -20,7 +21,6 @@ from trainer.base_trainer import BaseTrainer
 from utils.config import Config
 from utils.eval_metrics import metrics
 from utils.logs import Logger, add_prefix_to_dict, combine_dicts
-from collections import defaultdict
 
 config = Config()
 logger = Logger()
@@ -99,7 +99,7 @@ class MultiGraphTrainer(BaseTrainer):
         with torch.no_grad():
             self.model.clamp_learnables()
         self._log_train(data, pred, loss, intermediate_representations)
-    
+
     def val_step(self, data):
         # training step
         self.model.train()
@@ -138,7 +138,7 @@ class MultiGraphTrainer(BaseTrainer):
             # normal metrics
             train_metrics = metrics(pred, data.y, reduction="mean")
             train_metrics["total_loss"] = loss.item()
-         # prepare for logging
+        # prepare for logging
         scalar_metrics = add_prefix_to_dict(train_metrics, "train/")
 
         other = {}
@@ -203,9 +203,7 @@ class MultiGraphTrainer(BaseTrainer):
         self.model.eval()
         with torch.no_grad():
             # normal metrics
-            val_metrics = metrics(
-                pred, data.y, reduction="mean"
-            )
+            val_metrics = metrics(pred, data.y, reduction="mean")
             for key, value in val_metrics.items():
                 self.val_metrics[key] += value
             # validation loss
@@ -218,7 +216,7 @@ class MultiGraphTrainer(BaseTrainer):
         val_metrics = {}
         for key, value in self.val_metrics.items():
             val_metrics[key] = value / nb_items
-        
+
         val_metrics = add_prefix_to_dict(val_metrics, "val/")
         logger.info(val_metrics)
         self._log_all(scalar_metrics=val_metrics, other_wandb={})

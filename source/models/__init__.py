@@ -4,8 +4,8 @@ import torch
 
 from models.basic_gcn import BasicGCN
 from models.entropic_gcn import EntropicGCN
-from models.hrnet_gcn import HRNetGCN
 from models.g2 import G2_GNN
+from models.hrnet_gcn import HRNetGCN
 from utils.config import Config
 from utils.logs import Logger
 
