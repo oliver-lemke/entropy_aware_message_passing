@@ -110,11 +110,11 @@ class Entropy:
         # adding an epsilon is a hack to avoid log(0) = -inf.
         # x*ln(x) goes to 0 as x goes to 0, so this is okay
         if self.norm_dist:
-            distribution = torch.softmax(-energies / temperature, dim=0) + 1e-10
+            distribution = torch.softmax(-energies / temperature, dim=0)
         else:
             distribution = torch.exp(-energies / temperature)
 
-        return distribution
+        return distribution + 1e-10
 
     def Pbar(self, X, temperature):
         P = self.boltzmann_distribution(X, temperature)

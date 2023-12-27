@@ -97,7 +97,7 @@ class BaseTester:
         edge_index, _ = add_self_loops(grid_4_neighbors(10, 10))
         x = torch.rand(100, 1)
 
-        self.dataset = Data(x=x, edge_index=edge_index)
+        self.dataset = Data(x=x, edge_index=edge_index).to(config["device"])
 
         self.input_dim, self.output_dim = 1, 64
 
@@ -124,7 +124,7 @@ class BaseTester:
     def test_energy_per_layer(self):
         log_dict = {}
         # for model_type in ["basic_gcn"]:
-        for model_type in ["basic_gcn", "hrnet_gcn", "entropic_gcn"]:
+        for model_type in ["basic_gcn", "hrnet_gcn", "entropic_gcn", "g2"]:
             data_energy = []
             data_entropy = []
             config["model_type"] = model_type

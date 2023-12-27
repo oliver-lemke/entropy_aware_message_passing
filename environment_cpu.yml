@@ -20,3 +20,4 @@ dependencies:
     - opencv=4.8.1
     - matplotlib=3.8.0
     - wandb=0.15.12
+    - torch-scatter

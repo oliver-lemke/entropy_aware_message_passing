@@ -5,6 +5,7 @@ import torch
 from models.basic_gcn import BasicGCN
 from models.entropic_gcn import EntropicGCN
 from models.hrnet_gcn import HRNetGCN
+from models.g2 import G2_GNN
 from utils.config import Config
 from utils.logs import Logger
 
@@ -22,6 +23,7 @@ class ModelFactory:
             "basic_gcn": BasicGCN,
             "entropic_gcn": EntropicGCN,
             "hrnet_gcn": HRNetGCN,
+            "g2": G2_GNN,
         }
 
     def get_model(self, *args, **kwargs):

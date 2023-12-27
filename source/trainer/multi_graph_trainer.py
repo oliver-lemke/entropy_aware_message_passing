@@ -20,6 +20,7 @@ from trainer.base_trainer import BaseTrainer
 from utils.config import Config
 from utils.eval_metrics import metrics
 from utils.logs import Logger, add_prefix_to_dict, combine_dicts
+from collections import defaultdict
 
 config = Config()
 logger = Logger()
@@ -40,6 +41,7 @@ class MultiGraphTrainer(BaseTrainer):
         self.best_checkpoint = False
         self._step = 0
         self._epoch = 0
+        self.val_metrics = defaultdict(int)
 
         self._make_output_dir()
         if config["wandb"]["enable"]:
@@ -71,13 +73,13 @@ class MultiGraphTrainer(BaseTrainer):
 
         self.test_loader = DataLoader(
             self.dataset.test,
-            shuffle=True,
+            shuffle=False,
             batch_size=config["hyperparameters"]["train"]["batch_size"],
         )
 
         self.val_loader = DataLoader(
             self.dataset.val,
-            shuffle=True,
+            shuffle=False,
             batch_size=config["hyperparameters"]["train"]["batch_size"],
         )
 
@@ -110,7 +112,7 @@ class MultiGraphTrainer(BaseTrainer):
             loss = self.loss(pred, data.y)
             self.model.clamp_learnables()
 
-        self._log_val(data, pred, loss)
+        self._store_val(data, pred, loss)
 
     def one_epoch(self):
         logger.info(
@@ -118,8 +120,12 @@ class MultiGraphTrainer(BaseTrainer):
         )
         for data in self.train_loader:
             self.train_step(data)
+            break
+        n = 0
         for data in self.val_loader:
             self.val_step(data)
+            n += 1
+        self._log_val(n)
         self.scheduler.step()
 
     def _log_train(self, data, pred, loss, int_reps):
@@ -193,23 +199,27 @@ class MultiGraphTrainer(BaseTrainer):
 
         self._log_all(scalar_metrics=scalar_metrics, other_wandb=other)
 
-    def _log_val(self, data, pred, loss):
-        # ENtropy Object
-        A = torch_geometric.utils.to_dense_adj(data.edge_index).squeeze()
-        entropy = Entropy(A=A)
-        # metrics
+    def _store_val(self, data, pred, loss):
         self.model.eval()
         with torch.no_grad():
             # normal metrics
             val_metrics = metrics(
                 pred, data.y, reduction="mean"
             )
+            for key, value in val_metrics.items():
+                self.val_metrics[key] += value
             # validation loss
-            val_metrics["total_loss"] = loss.item()
-            if loss < self.prev_loss:
-                self.prev_loss = loss
+            self.val_metrics["total_loss"] += loss.item()
+            if loss < self.prev_val_loss:
+                self.prev_val_loss = loss
                 self.best_checkpoint = True
-        # prepare for logging
-        val_metrics = add_prefix_to_dict(val_metrics, "val/")
 
+    def _log_val(self, nb_items):
+        val_metrics = {}
+        for key, value in self.val_metrics.items():
+            val_metrics[key] = value / nb_items
+        
+        val_metrics = add_prefix_to_dict(val_metrics, "val/")
+        logger.info(val_metrics)
         self._log_all(scalar_metrics=val_metrics, other_wandb={})
+        self.val_metrics = defaultdict(int)
