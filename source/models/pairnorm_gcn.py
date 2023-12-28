@@ -3,7 +3,7 @@ from torch import nn
 from torch_geometric import nn as tnn
 from utils.config import Config
 from utils.logs import Logger
-from source.models.model_utils.layers import *
+from models.model_utils.layers import *
 
 config = Config()
 logger = Logger()

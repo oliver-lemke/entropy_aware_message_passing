@@ -11,8 +11,8 @@ note: "init"
 #######################################################################################
 
 # the type of solution to run
-# can be any in ["basic_gcn", "hrnet_gcn", "entropic_gcn"]
-model_type: "entropic_gcn"
+# can be any in ["basic_gcn", "hrnet_gcn", "entropic_gcn", "pairnorm_gcn"]
+model_type: "pairnorm_gcn"
 
 # can be any in ["train", "test"]
 run_type: "train"
@@ -43,6 +43,10 @@ model_parameters:
             - 2
             - 4
             - 6
+    pairnorm_gcn:
+        pretrained_weights: null
+        depth: 3
+        hidden_dim: 256
 
 # can be in [basic_gcn]
 conv_block_args:
