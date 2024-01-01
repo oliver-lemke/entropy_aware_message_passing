@@ -1,3 +1,14 @@
+'''
+@inproceedings{
+zhao2020pairnorm,
+title={PairNorm: Tackling Oversmoothing in {\{}GNN{\}}s},
+author={Lingxiao Zhao and Leman Akoglu},
+booktitle={International Conference on Learning Representations},
+year={2020},
+url={https://openreview.net/forum?id=rkecl1rtwB}
+}
+'''
+
 from torch import nn
 
 from torch_geometric import nn as tnn
@@ -27,7 +38,8 @@ class PairNormGCN(nn.Module):
         self.norm = PairNorm(norm_mode, norm_scale)
         self.skip = residual
 
-    def forward(self, x, adj):
+    def forward(self, data):
+        x, adj = data.x, data.adj
         x_old = 0
         for i, layer in enumerate(self.hidden_layers):
             x = self.dropout(x)
