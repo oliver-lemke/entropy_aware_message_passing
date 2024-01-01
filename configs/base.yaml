@@ -47,6 +47,10 @@ model_parameters:
         pretrained_weights: null
         depth: 3
         hidden_dim: 256
+        dropout: 0
+        residual: 0
+        norm_mode: null
+        norm_scale: 1
 
 # can be in [basic_gcn]
 conv_block_args:

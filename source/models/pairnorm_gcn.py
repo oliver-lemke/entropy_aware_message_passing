@@ -9,10 +9,7 @@ url={https://openreview.net/forum?id=rkecl1rtwB}
 }
 """
 
-from torch import nn
-
 from models.model_utils.layers import *
-from torch_geometric import nn as tnn
 from utils.config import Config
 from utils.logs import Logger
 
@@ -22,19 +19,16 @@ logger = Logger()
 
 class PairNormGCN(nn.Module):
     # source: https://github.com/LingxiaoShawn/PairNorm/blob/master/models.py
-    def __init__(
-        self,
-        input_dim,
-        output_dim,
-        hidden_dim=128,
-        dropout=0,
-        nlayer=2,
-        residual=0,
-        norm_mode="None",
-        norm_scale=1,
-        **kwargs
-    ):
+    def __init__(self, input_dim, output_dim):
         super(PairNormGCN, self).__init__()
+        self.params = config["model_parameters"]["pairnorm_gcn"]
+        hidden_dim = self.params["hidden_dim"]
+        nlayer = self.params["depth"]
+        dropout = self.params["dropout"]
+        residual = self.params["residual"]
+        norm_mode = str(self.params["norm_mode"])
+        norm_scale = self.params["norm_scale"]
+
         assert nlayer >= 1
         self.hidden_layers = nn.ModuleList(
             [
