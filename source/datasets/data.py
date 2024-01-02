@@ -2,10 +2,16 @@ import os
 
 import numpy as np
 import torch
+from utils.config import Config
+from utils.logs import Logger
 
 import scipy.sparse as sp
 
 # import torch_geometric.datasets as geo_data
+
+
+config = Config()
+logger = Logger()
 
 """
 DATA_ROOT = 'data'
@@ -14,9 +20,10 @@ if not os.path.isdir(DATA_ROOT):
 """
 
 
-def load_data(
-    data=None, data_name="cora", normalize_feature=True, missing_rate=0, cuda=False
-):
+def load_data(data=None, data_name="cora", normalize_feature=True, missing_rate=0, cuda=True):
+    # source: https://github.com/LingxiaoShawn/PairNorm/blob/master
+    cuda = config['device'] == 'gpu'
+    normalize_feature = config['model_parameters']['pairnorm_gcn']['normalize_feature']
     """
     # can use other dataset, some doesn't have mask
     data = geo_data.Planetoid(os.path.join(DATA_ROOT, data_name), data_name).data

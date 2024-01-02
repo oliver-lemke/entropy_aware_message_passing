@@ -51,6 +51,7 @@ model_parameters:
         residual: 0
         norm_mode: null
         norm_scale: 1
+        normalize_feature: True
 
 # can be in [basic_gcn]
 conv_block_args:

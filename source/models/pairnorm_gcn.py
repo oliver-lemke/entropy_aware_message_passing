@@ -18,7 +18,7 @@ logger = Logger()
 
 
 class PairNormGCN(nn.Module):
-    # source: https://github.com/LingxiaoShawn/PairNorm/blob/master/models.py
+    # source: https://github.com/LingxiaoShawn/PairNorm/blob/master
     def __init__(self, input_dim, output_dim):
         super(PairNormGCN, self).__init__()
         self.params = config["model_parameters"]["pairnorm_gcn"]

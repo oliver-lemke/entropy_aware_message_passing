@@ -1,4 +1,4 @@
-#source: https://github.com/LingxiaoShawn/PairNorm/blob/master/layers.py
+#source: https://github.com/LingxiaoShawn/PairNorm/blob/master
 
 import torch
 import torch.nn as nn
