@@ -9,7 +9,7 @@ def new_config() -> Config:
     config["model_type"] = "entropic_gcn"
     config["wandb"]["enable"] = True
     config["wandb"]["extended"] = False
-    config["wandb"]["project"] = "entropic-hp-tuning"
+    config["wandb"]["project"] = "entropic-hp-tuning-notempscaling"
     return config
 
 
@@ -40,11 +40,7 @@ def main():
         normalize,
     ) in combinations:
         config = new_config()
-        config["note"] = (
-            f"hp-d_{model_depth}-t_{temp}{'t' if temp_learn else 'f'}-"
-            f"w_{weight}{'t' if weight_learn else 'f'}-"
-            f"n_{normalize}"
-        )
+        config["note"] = f"hp-d_{model_depth}-t_{temp}-w_{weight}"
 
         # model
         config["model_type"] = model_type
