@@ -16,11 +16,11 @@ def new_config() -> Config:
 def main():
     model_type = "entropic_gcn"
     model_depths = (16, 32, 64)
-    temp_learns = (True, False)
-    temps = (1e-1, 1e0, 1e1)
-    weight_learns = (True, False)
-    weights = (1e-1, 1e0, 1e1)
-    normalizes = (True, False)
+    temp_learns = (False,)
+    temps = (1e-2, 1e-1, 1e0, 1e1)
+    weight_learns = (False,)
+    weights = (1e-2, 1e-1, 1e0, 1e1)
+    normalizes = (True,)
 
     combinations = itertools.product(
         model_depths,
