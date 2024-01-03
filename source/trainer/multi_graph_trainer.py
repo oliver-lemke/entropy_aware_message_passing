@@ -120,7 +120,6 @@ class MultiGraphTrainer(BaseTrainer):
         )
         for data in self.train_loader:
             self.train_step(data)
-            break
         n = 0
         for data in self.val_loader:
             self.val_step(data)
