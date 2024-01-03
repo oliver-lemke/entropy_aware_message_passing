@@ -34,6 +34,7 @@ model_parameters:
             value: 0.001
         normalize_energies: True
         normalize_distribution: False
+        scale_by_temperature: False
     hrnet_gcn:
         pretrained_weights: null
         depth: 8

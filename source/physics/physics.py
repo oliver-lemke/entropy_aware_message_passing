@@ -127,14 +127,18 @@ class Entropy:
 
         return P_bar
 
-    def gradient_entropy(self, X, temperature: float):
+    def gradient_entropy(
+        self, X, temperature: float, scale_by_temperature: bool = False
+    ):
         P_bar = self.Pbar(X, temperature)
         res1 = torch.einsum("ij,ik,i->ik", self.A, X, P_bar)
         res2 = torch.einsum("ij,ik,j->ik", self.A, X, P_bar)
         res3 = torch.einsum("ij,jk,i->ik", self.A, X, P_bar)
         res4 = torch.einsum("ij,jk,j->ik", self.A, X, P_bar)
 
-        result = 1 / temperature * (res1 + res2 - res3 - res4)
+        result = res1 + res2 - res3 - res4
+        if scale_by_temperature:
+            result = (1 / temperature) * result
 
         if self.norm_energy:
             result = result * self.energy_normalization(X.shape[1])
