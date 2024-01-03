@@ -24,8 +24,8 @@ class ModelFactory:
             "basic_gcn": BasicGCN,
             "entropic_gcn": EntropicGCN,
             "hrnet_gcn": HRNetGCN,
-            "pairnorm_gcn": PairNormGCN,
             "g2": G2_GNN,
+            "pairnorm_gcn": PairNormGCN,
         }
 
     def get_model(self, *args, **kwargs):

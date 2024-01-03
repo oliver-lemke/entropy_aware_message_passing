@@ -1,5 +1,6 @@
-# https://github.com/LingxiaoShawn/PairNorm/blob/master/data.py
 from datasets import faust, long_range, mnist, planetoid
+
+# https://github.com/LingxiaoShawn/PairNorm/blob/master/data.py
 from datasets.base import BaseDataset
 from datasets.data import load_data
 from utils.config import Config
