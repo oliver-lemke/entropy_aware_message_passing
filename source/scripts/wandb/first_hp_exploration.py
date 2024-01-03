@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import os
 import pickle
-from typing import Any, NewType
+from typing import Any, Callable, NewType
 
+import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 import wandb
 from utils.config import Config
 from wandb.apis.public import Run
@@ -12,30 +14,41 @@ from wandb.apis.public import Run
 system_config = Config()
 cache_path = os.path.join(system_config.get_subpath("cache"), "wandb_runs.pkl")
 
-RunsDict = NewType("RunsDict", dict[Any, dict[str, Any]])
+RunsDictEntry = NewType("RunsDictEntry", dict[str, Any])
+RunsDict = NewType("RunsDict", dict[str, RunsDictEntry])
+RunsTuple = NewType("RunsTuple", tuple[str, RunsDictEntry])
 
 
-def pre_filters(run) -> bool:
-    pred1 = run.state == "crashed"
+def pre_filters(run: dict[str, Any]) -> bool:
+    pred1 = run["state"] == "crashed"
     return any((pred1,))
 
 
-def predicate(run: Run) -> bool:
-    if pre_filters(run):
+def base_predicate(run: RunsTuple, *args, depth: int = 64, **kwargs) -> bool:
+    _, values = run
+    config = values["config"]
+    if pre_filters(values):
         return False
-    config = run.config
-    pred1 = config["model_type"] == "hrnet_gcn"
-    pred2 = config["model_parameters"]["hrnet_gcn"]["depth"] == 16
+    pred1 = config["model_type"] == "entropic_gcn"
+    pred2 = not config["model_parameters"]["entropic_gcn"]["temperature"]["learnable"]
     return all((pred1, pred2))
 
 
-def build_pandas_row(name: str, run: RunsDict) -> pd.DataFrame:
-    config, history = run["config"], run["history"]
+def build_pandas_row(run: RunsTuple, *args, **kwargs) -> pd.DataFrame:
+    name, values = run
+    config, history = values["config"], values["history"]
     value_dict = {
         "name": name,
-        "depth": config["model_parameters"]["hrnet_gcn"]["depth"],
-        "hidden_dim": config["conv_block_args"]["basic_gcn"]["hidden_dim"],
+        "depth": config["model_parameters"]["entropic_gcn"]["depth"],
+        "temperature": config["model_parameters"]["entropic_gcn"]["temperature"][
+            "value"
+        ],
+        "weight": config["model_parameters"]["entropic_gcn"]["weight"]["value"],
         "best_metric": history["val/total_loss"].min(),
+        "best_accuracy": history["val/accuracy"].max(),
+        "last_accuracy": history["val/accuracy"].loc[
+            history["val/accuracy"].last_valid_index()
+        ],
     }
     value_dict = {k: [v] for k, v in value_dict.items()}
     return pd.DataFrame.from_dict(value_dict)
@@ -64,15 +77,74 @@ def load_runs(name: str, load_if_cached: bool = True) -> RunsDict:
             runs = pickle.load(file)
     else:
         runs = api.runs(name)
-        runs = [run for run in runs if predicate(run)]
         runs = cache_runs(runs)
     return runs
 
 
+def load_df(
+    name: str, predicate_function: (Callable[[RunsTuple], bool] | None) = None
+) -> pd.DataFrame:
+    runs = load_runs(name)
+    if predicate_function is not None:
+        runs = [run for run in runs.items() if predicate_function(run)]
+    else:
+        runs = runs.items()
+    df = pd.concat([build_pandas_row(run) for run in runs], axis=0)
+    return df
+
+
+def heatmap_by_depth(depth: int) -> None:
+    PATH = "gnn_dl/entropic-hp-tuning-notempscaling"
+    TYPE_OF_ACCURACY = "best"
+    # TYPE_OF_ACCURACY = "last"
+
+    if depth is None:
+        df = load_df(PATH)
+    else:
+
+        def predicate_function(run: RunsTuple) -> bool:
+            params = run[1]["config"]["model_parameters"]["entropic_gcn"]
+            p1 = params["depth"] == depth
+            p2 = params["temperature"]["value"] >= 0.1
+            p3 = params["weight"]["value"] >= 0.1
+            return all((p1, p2, p3))
+
+        df = load_df(PATH, predicate_function)
+    df = df.drop("name", axis=1)
+    acc_avg = df.groupby(by=["temperature", "weight"]).mean()[
+        f"{TYPE_OF_ACCURACY}_accuracy"
+    ]
+    acc_avg = acc_avg.unstack(level=-1)
+
+    # Converting index and columns to numeric for proper sorting
+    acc_avg.index = pd.to_numeric(acc_avg.index)
+    acc_avg.columns = pd.to_numeric(acc_avg.columns)
+    acc_avg = acc_avg.sort_index().sort_index(axis=1)
+
+    # Creating the heatmap
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(
+        acc_avg,
+        annot=True,
+        cmap="coolwarm",
+        cbar_kws={"label": "Best Accuracy"},
+        annot_kws={"size": 10},
+    )
+    plt.title(
+        f"Heatmap of {TYPE_OF_ACCURACY.capitalize()} Accuracy, Depth = {depth}",
+        fontsize=14,
+    )
+    plt.xlabel("Weight", fontsize=12)
+    plt.ylabel("Temperature", fontsize=12)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.show()
+
+
 def main():
-    runs = load_runs("gnn_dl/hp-tuning")
-    df = pd.concat([build_pandas_row(*run) for run in runs.items()], axis=0)
-    pass
+    DEPTHS = [16, 32, 64, None]
+    for depth in DEPTHS:
+        heatmap_by_depth(depth)
 
 
 if __name__ == "__main__":

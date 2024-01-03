@@ -9,18 +9,19 @@ def new_config() -> Config:
     config["model_type"] = "entropic_gcn"
     config["wandb"]["enable"] = True
     config["wandb"]["extended"] = False
-    config["wandb"]["project"] = "entropic-hp-tuning"
+    config["wandb"]["project"] = "entropic-hp-tuning-notempscaling"
     return config
 
 
 def main():
     model_type = "entropic_gcn"
-    model_depths = (16, 32, 64)
-    temp_learns = (True, False)
-    temps = (1e-1, 1e0, 1e1)
-    weight_learns = (True, False)
-    weights = (1e-1, 1e0, 1e1)
-    normalizes = (True, False)
+    model_depths = (64,)
+    temp_learns = (False,)
+    temps = (1e2,)
+    weight_learns = (False,)
+    weights = (1e0,)
+    normalizes = (True,)
+    repetitions = 2
 
     combinations = itertools.product(
         model_depths,
@@ -29,6 +30,7 @@ def main():
         weight_learns,
         weights,
         normalizes,
+        list(range(repetitions)),
     )
 
     for (
@@ -38,13 +40,10 @@ def main():
         weight_learn,
         weight,
         normalize,
+        repetition,
     ) in combinations:
         config = new_config()
-        config["note"] = (
-            f"hp-d_{model_depth}-t_{temp}{'t' if temp_learn else 'f'}-"
-            f"w_{weight}{'t' if weight_learn else 'f'}-"
-            f"n_{normalize}"
-        )
+        config["note"] = f"hp-d_{model_depth}-t_{temp}-w_{weight}_r{repetition}"
 
         # model
         config["model_type"] = model_type

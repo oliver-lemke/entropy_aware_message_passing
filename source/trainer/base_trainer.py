@@ -123,14 +123,14 @@ class BaseTrainer:
 
         # gradient descent
         self.optimizer.zero_grad()
-        pred, intermediate_representations = self.model(data)
+        pred, intermediate_representations, log_data = self.model(data)
         loss = self.loss(pred[data.train_mask], data.y[data.train_mask])
         loss.backward()
         self.optimizer.step()
 
         with torch.no_grad():
             self.model.clamp_learnables()
-        self._log(data, pred, loss, intermediate_representations)
+        self._log(data, pred, loss, intermediate_representations, log_data)
 
     def one_epoch(self):
         logger.info(
@@ -225,7 +225,7 @@ class BaseTrainer:
             log_dict = combine_dicts(**scalar_metrics, **other_wandb)
             wandb.log(log_dict)
 
-    def _log(self, data, pred, loss, int_reps):
+    def _log(self, data, pred, loss, int_reps, log_data):
         # ENtropy Object
         A = torch_geometric.utils.to_dense_adj(data.edge_index).squeeze()
         entropy = Entropy(A=A)
@@ -250,7 +250,7 @@ class BaseTrainer:
         # prepare for logging
         train_metrics = add_prefix_to_dict(train_metrics, "train/")
         val_metrics = add_prefix_to_dict(val_metrics, "val/")
-        scalar_metrics = combine_dicts(**train_metrics, **val_metrics)
+        scalar_metrics = combine_dicts(**train_metrics, **val_metrics, **log_data)
 
         other = {}
         if config["wandb"]["extended"]:

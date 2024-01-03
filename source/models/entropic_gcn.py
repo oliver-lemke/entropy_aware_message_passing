@@ -13,11 +13,15 @@ class EntropicLayer(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
         self.gcn_conv = tnn.GCNConv(input_dim, output_dim)
+        self.params = config["model_parameters"]["entropic_gcn"]
+        self.scale_by_temperature = self.params["scale_by_temperature"]
 
     def forward(self, x, edge_index, weight, temperature, entropy):
         x = self.gcn_conv(x, edge_index)
         with torch.no_grad():
-            entropy_gradient = entropy.gradient_entropy(x, temperature)
+            entropy_gradient = entropy.gradient_entropy(
+                x, temperature, scale_by_temperature=self.scale_by_temperature
+            )
         x = x + weight * entropy_gradient
         return x
 
@@ -103,9 +107,24 @@ class EntropicGCN(nn.Module):
         embedding = self.conv_out(x, edge_index)
         intermediate_representations["final"] = embedding
 
+        # log parameters
+        if self.params["temperature"]["learnable"]:
+            temperature_data = self.temperature.data
+        else:
+            temperature_data = self.temperature
+
+        if self.params["weight"]["learnable"]:
+            weight_data = self.weight.data
+        else:
+            weight_data = self.weight
+
         return (
             embedding,
             intermediate_representations,
+            {
+                "parameters/temperature": temperature_data,
+                "parameters/weight": weight_data,
+            },
         )
 
     def clamp_learnables(self):
