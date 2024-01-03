@@ -253,7 +253,7 @@ class BaseTrainer:
         scalar_metrics = combine_dicts(**train_metrics, **val_metrics, **log_data)
 
         other = {}
-        if config["wandb"]["extended"]:
+        if config["wandb"]["enable"] and config["wandb"]["extended"]:
             with torch.no_grad():
                 total_metrics = {}
                 energies, entropies = [], []

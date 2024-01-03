@@ -11,7 +11,7 @@ note: "init"
 #######################################################################################
 
 # the type of solution to run
-# can be any in ["basic_gcn", "hrnet_gcn", "entropic_gcn", "g2"]
+# can be any in ["basic_gcn", "hrnet_gcn", "entropic_gcn", "pairnorm_gcn", "g2"]
 model_type: "entropic_gcn"
 
 # can be any in ["train", "test"]
@@ -44,6 +44,15 @@ model_parameters:
             - 2
             - 4
             - 6
+    pairnorm_gcn:
+        pretrained_weights: null
+        depth: 16
+        hidden_dim: 256
+        dropout: 0
+        residual: 0
+        norm_mode: null
+        norm_scale: 1
+        normalize_feature: True
     g2:
         pretrained_weights: null
         depth: 8
@@ -98,6 +107,24 @@ output_block_args:
         attention_hidden_dim: 256
         depth: 2
         hidden_dim: 256
+
+
+tester:
+    model_types:
+        - "pairnorm_gcn"
+    depths:
+        - 10
+        - 50
+        - 100
+        - 200
+        - 300
+        - 400
+        - 500
+        - 600
+        - 700
+        - 800
+        - 900
+        - 1000
 
 
 #######################################################################################
