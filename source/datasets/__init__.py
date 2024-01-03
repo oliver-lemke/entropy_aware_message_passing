@@ -25,7 +25,7 @@ class DatasetFactory:
         if config["model_type"] == "pairnorm_gcn":
             dataset_data = dataset.data
             dataset_data = load_data(dataset_data)
-            Dataset.data = dataset_data
+            dataset.data = dataset_data
 
         return dataset
 

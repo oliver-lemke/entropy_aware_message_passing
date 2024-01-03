@@ -6,6 +6,7 @@ import os
 import torch
 
 import wandb
+from datasets import load_data
 from models import ModelFactory
 from physics.physics import Entropy
 from torch_geometric.data import Data
@@ -97,7 +98,10 @@ class BaseTester:
         edge_index, _ = add_self_loops(grid_4_neighbors(10, 10))
         x = torch.rand(100, 1)
 
-        self.dataset = Data(x=x, edge_index=edge_index).to(config["device"])
+        dataset = Data(x=x, edge_index=edge_index)
+        if config["model_type"] == "pairnorm_gcn":
+            dataset = load_data(dataset)
+        self.dataset = dataset.to(config["device"])
 
         self.input_dim, self.output_dim = 1, 64
 
@@ -122,6 +126,39 @@ class BaseTester:
         return self.entropy.entropy(self.model(self.dataset)[0], self.T)
 
     def test_energy_per_layer(self):
+        log_dict = {}
+        # for model_type in ["basic_gcn"]:
+        data_energy = []
+        data_entropy = []
+        model_type = config["tester"]["model_type"]
+        for depth in config["tester"]["depths"]:
+            config["model_parameters"][model_type]["depth"] = depth
+            self.prepare_dataset()
+            self.prepare_model()
+            data_energy.append((depth, self.calculate_energy()))
+            data_entropy.append((depth, self.calculate_entropy()))
+        energy_table = wandb.Table(data=data_energy, columns=["depth", "energy"])
+        entropy_table = wandb.Table(data=data_entropy, columns=["depth", "entropy"])
+        log_dict[f"energy/{model_type}"] = wandb.plot.line(
+            energy_table,
+            "depth",
+            "energy",
+            title=f"Energy as a function of model depth for {model_type}",
+        )
+        log_dict[f"entropy/{model_type}"] = wandb.plot.line(
+            entropy_table,
+            "depth",
+            "entropy",
+            title=f"Entropy as a function of model depth for {model_type}",
+        )
+
+        wandb.log(log_dict)
+        self._close()
+
+    def _close(self):
+        wandb.finish(exit_code=0, quiet=False)
+
+    def test_energy_per_layer_full(self):
         log_dict = {}
         # for model_type in ["basic_gcn"]:
         for model_type in ["basic_gcn", "entropic_gcn"]:
