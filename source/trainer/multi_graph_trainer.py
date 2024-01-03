@@ -91,14 +91,14 @@ class MultiGraphTrainer(BaseTrainer):
 
         # gradient descent
         self.optimizer.zero_grad()
-        pred, intermediate_representations = self.model(data)
+        pred, intermediate_representations, log_data = self.model(data)
         loss = self.loss(pred, data.y)
         loss.backward()
         self.optimizer.step()
 
         with torch.no_grad():
             self.model.clamp_learnables()
-        self._log_train(data, pred, loss, intermediate_representations)
+        self._log_train(data, pred, loss, intermediate_representations, log_data)
 
     def val_step(self, data):
         # training step
@@ -108,7 +108,7 @@ class MultiGraphTrainer(BaseTrainer):
         # gradient descent
         with torch.no_grad():
             self.optimizer.zero_grad()
-            pred, _ = self.model(data)
+            pred, _, _ = self.model(data)
             loss = self.loss(pred, data.y)
             self.model.clamp_learnables()
 
@@ -128,7 +128,7 @@ class MultiGraphTrainer(BaseTrainer):
         self._log_val(n)
         self.scheduler.step()
 
-    def _log_train(self, data, pred, loss, int_reps):
+    def _log_train(self, data, pred, loss, int_reps, log_data):
         # ENtropy Object
         A = torch_geometric.utils.to_dense_adj(data.edge_index).squeeze()
         entropy = Entropy(A=A)
@@ -140,6 +140,7 @@ class MultiGraphTrainer(BaseTrainer):
             train_metrics["total_loss"] = loss.item()
         # prepare for logging
         scalar_metrics = add_prefix_to_dict(train_metrics, "train/")
+        scalar_metrics = combine_dicts(**scalar_metrics, **log_data)
 
         other = {}
         if config["wandb"]["extended"]:

@@ -91,7 +91,7 @@ class G2_GNN(nn.Module):
         X = torch.relu(self.dec(X))
 
         intermediate_representations["final"] = X
-        return X, intermediate_representations
+        return X, intermediate_representations, {}
 
     def clamp_learnables(self):
         # no learnable parameters
