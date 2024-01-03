@@ -15,12 +15,13 @@ def new_config() -> Config:
 
 def main():
     model_type = "entropic_gcn"
-    model_depths = (16, 32, 64)
+    model_depths = (64,)
     temp_learns = (False,)
-    temps = (1e-2, 1e-1, 1e0, 1e1)
+    temps = (1e2,)
     weight_learns = (False,)
-    weights = (1e-2, 1e-1, 1e0, 1e1)
+    weights = (1e0,)
     normalizes = (True,)
+    repetitions = 2
 
     combinations = itertools.product(
         model_depths,
@@ -29,6 +30,7 @@ def main():
         weight_learns,
         weights,
         normalizes,
+        list(range(repetitions)),
     )
 
     for (
@@ -38,9 +40,10 @@ def main():
         weight_learn,
         weight,
         normalize,
+        repetition,
     ) in combinations:
         config = new_config()
-        config["note"] = f"hp-d_{model_depth}-t_{temp}-w_{weight}"
+        config["note"] = f"hp-d_{model_depth}-t_{temp}-w_{weight}_r{repetition}"
 
         # model
         config["model_type"] = model_type
