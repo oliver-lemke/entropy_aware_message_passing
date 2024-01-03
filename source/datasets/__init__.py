@@ -1,5 +1,6 @@
 # https://github.com/LingxiaoShawn/PairNorm/blob/master/data.py
 from datasets import faust, mnist, planetoid
+from datasets import faust, long_range, mnist, planetoid
 from datasets.base import BaseDataset
 from datasets.data import load_data
 from utils.config import Config
@@ -15,6 +16,7 @@ class DatasetFactory:
             "planetoid": planetoid.PlanetoidDataset,
             "faust": faust.FaustDataset,
             "mnist": mnist.MNISTDataset,
+            "long_range": long_range.LongRangeDataset,
         }
 
     def get_dataset(self, *args, **kwargs) -> BaseDataset:

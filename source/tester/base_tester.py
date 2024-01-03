@@ -161,29 +161,20 @@ class BaseTester:
     def test_energy_per_layer_full(self):
         log_dict = {}
         # for model_type in ["basic_gcn"]:
-        for model_type in ["basic_gcn", "entropic_gcn"]:
+        for model_type in ["basic_gcn", "hrnet_gcn", "entropic_gcn", "g2"]:
             data_energy = []
             data_entropy = []
             config["model_type"] = model_type
+            wandb.define_metric("depth")
+            wandb.define_metric("energy/*", step_metric="depth")
+            wandb.define_metric("entropy/*", step_metric="depth")
             for depth in range(10, 1000, 100):
                 config["model_parameters"][model_type]["depth"] = depth
                 self.prepare_dataset()
                 self.prepare_model()
-                data_energy.append((depth, self.calculate_energy()))
-                data_entropy.append((depth, self.calculate_entropy()))
-            energy_table = wandb.Table(data=data_energy, columns=["depth", "energy"])
-            entropy_table = wandb.Table(data=data_entropy, columns=["depth", "entropy"])
-            log_dict[f"energy/{model_type}"] = wandb.plot.line(
-                energy_table,
-                "depth",
-                "energy",
-                title=f"Energy as a function of model depth for {model_type}",
-            )
-            log_dict[f"entropy/{model_type}"] = wandb.plot.line(
-                entropy_table,
-                "depth",
-                "entropy",
-                title=f"Entropy as a function of model depth for {model_type}",
-            )
-
-        wandb.log(log_dict)
+                log_dict = {
+                    "depth": depth,
+                    f"energy/{model_type}": self.calculate_energy(),
+                    f"entropy/{model_type}": self.calculate_entropy(),
+                }
+                wandb.log(log_dict)

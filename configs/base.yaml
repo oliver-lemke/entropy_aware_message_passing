@@ -11,8 +11,8 @@ note: "init"
 #######################################################################################
 
 # the type of solution to run
-# can be any in ["basic_gcn", "hrnet_gcn", "entropic_gcn", "pairnorm_gcn"]
-model_type: "pairnorm_gcn"
+# can be any in ["basic_gcn", "hrnet_gcn", "entropic_gcn", "pairnorm_gcn", "g2"]
+model_type: "entropic_gcn"
 
 # can be any in ["train", "test"]
 run_type: "train"
@@ -34,6 +34,7 @@ model_parameters:
             value: 0.001
         normalize_energies: True
         normalize_distribution: False
+        scale_by_temperature: False
     hrnet_gcn:
         pretrained_weights: null
         depth: 8
@@ -52,6 +53,15 @@ model_parameters:
         norm_mode: null
         norm_scale: 1
         normalize_feature: True
+    g2:
+        pretrained_weights: null
+        depth: 8
+        hidden_dim: 256
+        use_gg_conv: true
+        conv_type: "GCN"
+        dropout: 0
+        input_dropout: 0
+        p: 2.0
 
 # can be in [basic_gcn]
 conv_block_args:
@@ -123,9 +133,13 @@ tester:
 
 # can be in ["planetoid", "faust", "mnist"]
 dataset: "planetoid"
+multi_graph_dataset: false
+
 dataset_parameters:
     planetoid:
         name: "Cora"
+    long_range:
+        name: "PascalVOC-SP"
 
 
 #######################################################################################
