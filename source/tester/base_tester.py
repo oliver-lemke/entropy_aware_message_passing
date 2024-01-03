@@ -127,32 +127,18 @@ class BaseTester:
 
     def test_energy_per_layer(self):
         log_dict = {}
-        # for model_type in ["basic_gcn"]:
-        data_energy = []
-        data_entropy = []
         model_type = config["tester"]["model_type"]
         for depth in config["tester"]["depths"]:
             config["model_parameters"][model_type]["depth"] = depth
             self.prepare_dataset()
             self.prepare_model()
-            data_energy.append((depth, self.calculate_energy()))
-            data_entropy.append((depth, self.calculate_entropy()))
-        energy_table = wandb.Table(data=data_energy, columns=["depth", "energy"])
-        entropy_table = wandb.Table(data=data_entropy, columns=["depth", "entropy"])
-        log_dict[f"energy/{model_type}"] = wandb.plot.line(
-            energy_table,
-            "depth",
-            "energy",
-            title=f"Energy as a function of model depth for {model_type}",
-        )
-        log_dict[f"entropy/{model_type}"] = wandb.plot.line(
-            entropy_table,
-            "depth",
-            "entropy",
-            title=f"Entropy as a function of model depth for {model_type}",
-        )
+            log_dict = {
+                "depth": depth,
+                f"energy/{model_type}": self.calculate_energy(),
+                f"entropy/{model_type}": self.calculate_entropy(),
+            }
+            wandb.log(log_dict)
 
-        wandb.log(log_dict)
         self._close()
 
     def _close(self):
@@ -162,8 +148,6 @@ class BaseTester:
         log_dict = {}
         # for model_type in ["basic_gcn"]:
         for model_type in ["basic_gcn", "hrnet_gcn", "entropic_gcn", "g2"]:
-            data_energy = []
-            data_entropy = []
             config["model_type"] = model_type
             wandb.define_metric("depth")
             wandb.define_metric("energy/*", step_metric="depth")
@@ -178,3 +162,4 @@ class BaseTester:
                     f"entropy/{model_type}": self.calculate_entropy(),
                 }
                 wandb.log(log_dict)
+        self._close()
