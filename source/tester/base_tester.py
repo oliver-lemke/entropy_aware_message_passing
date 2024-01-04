@@ -110,7 +110,9 @@ class BaseTester:
 
         # TODO: load these bools from config
         self.entropy = Entropy(
-            A=A, norm_energy=self.norm_energy, norm_dist=self.norm_dist
+            A=A,
+            norm_energy=False,
+            norm_dist=False,
         )
 
     def prepare_model(self):

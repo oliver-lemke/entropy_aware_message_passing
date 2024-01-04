@@ -20,21 +20,39 @@ run_type: "train"
 model_parameters:
     basic_gcn:
         pretrained_weights: null
-        depth: 3
+        depth: 64
         hidden_dim: 256
     entropic_gcn:
         pretrained_weights: null
-        depth: 6
+        depth: 64
         hidden_dim: 256
         temperature:
             learnable: False
-            value: 1
+            value: 10.0
         weight:
-            learnable: True
-            value: 0.001
+            learnable: False
+            value: 1.0
         normalize_energies: True
         normalize_distribution: False
         scale_by_temperature: False
+    pairnorm_gcn:
+        pretrained_weights: null
+        depth: 64
+        hidden_dim: 256
+        dropout: 0
+        residual: 0
+        norm_mode: "PN-SI"
+        norm_scale: 3
+        normalize_feature: True
+    g2:
+        pretrained_weights: null
+        depth: 64
+        hidden_dim: 256
+        use_gg_conv: true
+        conv_type: "GCN"
+        dropout: 0
+        input_dropout: 0
+        p: 2.0
     hrnet_gcn:
         pretrained_weights: null
         depth: 8
@@ -44,24 +62,6 @@ model_parameters:
             - 2
             - 4
             - 6
-    pairnorm_gcn:
-        pretrained_weights: null
-        depth: 16
-        hidden_dim: 256
-        dropout: 0
-        residual: 0
-        norm_mode: null
-        norm_scale: 1
-        normalize_feature: True
-    g2:
-        pretrained_weights: null
-        depth: 8
-        hidden_dim: 256
-        use_gg_conv: true
-        conv_type: "GCN"
-        dropout: 0
-        input_dropout: 0
-        p: 2.0
 
 # can be in [basic_gcn]
 conv_block_args:
@@ -113,6 +113,7 @@ tester:
     model_types:
         - "pairnorm_gcn"
     depths:
+        - 1
         - 10
         - 50
         - 100
@@ -148,7 +149,7 @@ dataset_parameters:
 
 hyperparameters:
     train:
-        batch_size: 4096
+        batch_size: 5
         learning_rate: 0.001
         weight_decay: 0
         epochs: 100
@@ -179,7 +180,7 @@ save_names:
 wandb:
     enable: True
     # whether to plot extra plots
-    extended: True
+    extended: False
     entity: "gnn_dl"
     project: "Init Tests"
     group: null

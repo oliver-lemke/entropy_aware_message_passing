@@ -67,7 +67,7 @@ class Entropy:
         degrees = torch.diagonal(self.D, 0)
 
         # compute normalization
-        norm = 1 / torch.sqrt(degrees * dim)
+        norm = 1 / torch.sqrt(degrees * dim + 1e-15)
 
         return norm.unsqueeze(-1)
 
