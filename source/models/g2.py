@@ -87,6 +87,7 @@ class G2_GNN(nn.Module):
             tau = self.G2(X, edge_index)
             X = (1 - tau) * X + tau * X_
             intermediate_representations[idx] = X
+            idx += 1
         X = F.dropout(X, self.drop, training=self.training)
         X = torch.relu(self.dec(X))
 

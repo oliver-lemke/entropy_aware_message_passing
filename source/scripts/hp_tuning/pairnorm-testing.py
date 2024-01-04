@@ -9,31 +9,29 @@ def new_config() -> Config:
     config = Config()
     config["wandb"]["enable"] = True
     config["wandb"]["extended"] = True
-    config["wandb"]["project"] = "pairnorm-test"
+    config["wandb"]["project"] = "testing"
     return config
 
 
 def main():
     run_type = "test"
-    model_type = "pairnorm_gcn"
-    modes = ("PN", "PN-SI", "PN-SCS", None)
+    model_types = ("pairnorm_gcn",)
 
-    combinations = itertools.product(modes)
+    combinations = itertools.product(model_types)
 
-    for (mode,) in combinations:
+    for (model_type,) in combinations:
         config = new_config()
-        config["note"] = f"pairnorm-test-m_{mode}"
+        config["note"] = f"test-{model_type}"
 
         # model
         config["run_type"] = run_type
         config["model_type"] = model_type
         config["tester"]["model_type"] = model_type
-        config["model_parameters"][model_type]["norm_mode"] = mode
 
         tester = BaseTester()
         tester.test_energy_per_layer()
         del tester
-        time.sleep(10)
+        time.sleep(5)
 
 
 if __name__ == "__main__":
