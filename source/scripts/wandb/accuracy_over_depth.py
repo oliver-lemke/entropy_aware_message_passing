@@ -123,6 +123,12 @@ def main() -> None:
     sns.set_style("whitegrid")
     # Setting the font scale for larger text
     sns.set_context("notebook", font_scale=1.5)
+    custom_palette = {
+        "pairnorm": "blue",
+        "g2": "darkorange",
+        "entropic": "green",
+        "basic": "red",
+    }
 
     # Plotting
     plt.figure(figsize=(10, 6))
