@@ -29,6 +29,9 @@ cd source
 python -m main
 ```
 
+## Config
+To make changes to the configuration of the project, please change configs/base.yaml.
+
 ## Overall Setup
 ```
 project_root_dir/                                   <--- root directory of the project
@@ -86,7 +89,7 @@ project_root_dir/                                   <--- root directory of the p
 │
 ├── .gitignore                                      <--- global .gitignore
 ├── environment.yaml                                <--- conda env file for GPU machines
-├── environment_cpu.yaml                                <--- conda env file for non-GPU machines
+├── environment_cpu.yaml                            <--- conda env file for non-GPU machines
 └── README.md
 ```
 
