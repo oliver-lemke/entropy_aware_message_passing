@@ -31,6 +31,8 @@ python -m main
 
 ## Config
 To make changes to the configuration of the project, please change configs/base.yaml.
+The hyperparameters present base.yaml are the ones used in the project.
+Please refer to comments within base.yaml for specific explanations.
 
 ## Overall Setup
 ```
@@ -92,30 +94,3 @@ project_root_dir/                                   <--- root directory of the p
 ├── environment_cpu.yaml                            <--- conda env file for non-GPU machines
 └── README.md
 ```
-
-# GitHub Actions
-This project uses [black](https://pypi.org/project/black/) and
-[isort](https://pypi.org/project/isort/) for formatting, and
-[pylint](https://pypi.org/project/pylint/) for linting.
-
-## PyCharm setup
-1. Download the [File Watchers](https://www.jetbrains.com/help/pycharm/using-file-watchers.html)
-Plugin
-2. Under Settings > Tools > File Watcher > + > \<custom>: setup a new watcher for each
-   1. black
-      - Name: Black Watcher
-      - File type: Python
-      - Scope: Project Files
-      - Program: \$PyInterpreterDirectory\$/black
-      - Arguments: \$FilePath\$
-      - Output paths to refresh: \$FilePath\$
-      - Working directory: \$ProjectFileDir\$
-      - Additional: as wished
-   2. isort
-      - Name: iSort Watcher
-      - Program: \$PyInterpreterDirectory\$/isort
-      - Arguments: \$FilePath\$ --sp \$ContentRoot\$/.style/.isort.cfg --settings-path \$ProjectFileDir\$/pyproject.toml
-   3. pylint
-      - Name: PyLint Watcher
-      - Program: \$PyInterpreterDirectory\$/pylint
-      - Arguments: --msg-template="\$FileDir\$/{path}:{line}:{column}:{C}:({symbol}){msg}" \$FilePath\$ --rcfile \$ProjectFileDir\$/pyproject.toml
