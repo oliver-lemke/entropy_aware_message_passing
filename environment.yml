@@ -21,3 +21,7 @@ dependencies:
     - opencv=4.8.1
     - matplotlib=3.8.0
     - wandb=0.15.12
+    - pip:
+        - seaborn==0.13.1
+        - tables==3.9.2
+        - torch-scatter==2.1.2

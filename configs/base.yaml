@@ -10,7 +10,7 @@ note: "init"
 ################################### MODEL PARAMETERS ##################################
 #######################################################################################
 
-# the type of solution to run
+# the type of model to run
 # can be any in ["basic_gcn", "hrnet_gcn", "entropic_gcn", "pairnorm_gcn", "g2"]
 model_type: "entropic_gcn"
 
@@ -18,6 +18,8 @@ model_type: "entropic_gcn"
 run_type: "train"
 
 model_parameters:
+    # general explanations
+    # depth: depth of the model, hidden_dim: dimensionality of hidden layers
     basic_gcn:
         pretrained_weights: null
         depth: 64
@@ -32,8 +34,11 @@ model_parameters:
         weight:
             learnable: False
             value: 1.0
+        # normalize energies (by dimensionality and degree)
         normalize_energies: True
+        # normalize distribution via softmax
         normalize_distribution: False
+        # scale entropy gradient by temperature
         scale_by_temperature: False
     pairnorm_gcn:
         pretrained_weights: null
@@ -63,56 +68,11 @@ model_parameters:
             - 4
             - 6
 
-# can be in [basic_gcn]
-conv_block_args:
-    block_type: "basic_gcn"
-    basic_gcn:
-        depth: 2
-        hidden_dim: 256
-        dropout_rate: 0.0
-# can be in [sum, mean, max, simple_conv, simple_attention]
-fusion_block_args:
-    block_type: "simple_conv"
-    simple_conv:
-        depth: 2
-        hidden_dim: 128
-        residual: True
-    simple_attention:
-        # can be in [per_node, per_element]
-        attention_type: "per_node"
-        attention_depth: 2
-        attention_hidden_dim: 256
-        depth: 2
-        hidden_dim: 256
-        residual: True
-# can be in [id, full]
-transform_block_args:
-    block_type: "full"
-    full:
-        depth: 2
-        hidden_dim: 128
-        residual: True
-# can be in [single, sum, mean, max, simple_conv, simple_attention]
-output_block_args:
-    block_type: "mean"
-    single:
-        branch_index: 0
-    simple_conv:
-        depth: 2
-        hidden_dim: 16
-    simple_attention:
-        # can be in [per_node, per_element]
-        attention_type: "per_node"
-        attention_depth: 2
-        attention_hidden_dim: 256
-        depth: 2
-        hidden_dim: 256
-
-
+# for 2D grid testing from Rusch et al.
 tester:
     model_types:
         - "pairnorm_gcn"
-    depths:
+    depths: # which depths to test
         - 1
         - 10
         - 50
@@ -189,3 +149,53 @@ logging:
     # DEBUG, INFO, WARNING, ERROR, CRITICAL
     console: "DEBUG"
     wandb: "DEBUG"
+
+
+#######################################################################################
+######################################## HRNET ########################################
+#######################################################################################
+
+# can be in [basic_gcn]
+conv_block_args:
+    block_type: "basic_gcn"
+    basic_gcn:
+        depth: 2
+        hidden_dim: 256
+        dropout_rate: 0.0
+# can be in [sum, mean, max, simple_conv, simple_attention]
+fusion_block_args:
+    block_type: "simple_conv"
+    simple_conv:
+        depth: 2
+        hidden_dim: 128
+        residual: True
+    simple_attention:
+        # can be in [per_node, per_element]
+        attention_type: "per_node"
+        attention_depth: 2
+        attention_hidden_dim: 256
+        depth: 2
+        hidden_dim: 256
+        residual: True
+# can be in [id, full]
+transform_block_args:
+    block_type: "full"
+    full:
+        depth: 2
+        hidden_dim: 128
+        residual: True
+# can be in [single, sum, mean, max, simple_conv, simple_attention]
+output_block_args:
+    block_type: "mean"
+    single:
+        branch_index: 0
+    simple_conv:
+        depth: 2
+        hidden_dim: 16
+    simple_attention:
+        # can be in [per_node, per_element]
+        attention_type: "per_node"
+        attention_depth: 2
+        attention_hidden_dim: 256
+        depth: 2
+        hidden_dim: 256
