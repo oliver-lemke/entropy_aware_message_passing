@@ -227,8 +227,7 @@ class BaseTrainer:
 
     def _log(self, data, pred, loss, int_reps, log_data):
         # ENtropy Object
-        A = torch_geometric.utils.to_dense_adj(data.edge_index).squeeze()
-        entropy = Entropy(A=A)
+        entropy = Entropy(A=data.edge_index, norm_energy=True, norm_dist=False)
         # metrics
         self.model.eval()
         with torch.no_grad():

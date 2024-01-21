@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import torch
+import torch_geometric as tg
 
 
 class Entropy:
@@ -31,9 +32,13 @@ class Entropy:
         """
 
         self.A = A
+        # self.A.requires_grad_(False)
 
         # given A, compute L
-        self.D = torch.diag(torch.sum(A, dim=0))
+        # self.D = torch.sum(A, dim=0)
+        # self.D.requires_grad_(False)
+
+        self.D = tg.utils.degree(self.A[0])
 
     def entropy(self, X, temperature):
         """Compute the entropy of the graph embedding X
@@ -62,12 +67,9 @@ class Entropy:
         Compute normalization for each nodes dirichlet energy.
         """
 
-        # compute degree of each node
-        # degrees = torch.sum(self.A, dim=1)
-        degrees = torch.diagonal(self.D, 0)
 
         # compute normalization
-        norm = 1 / torch.sqrt(degrees * dim + 1e-15)
+        norm = 1 / torch.sqrt(self.D * dim + 1e-15)
 
         return norm.unsqueeze(-1)
 
@@ -78,16 +80,23 @@ class Entropy:
             torch.tensor, shape N: Dirichlet Energies for each node
         """
 
-        res1 = torch.einsum("ij,ik,ik->i", self.A, X, X)
-        res2 = torch.einsum("ij,ik,jk->i", self.A, X, X)
-        res3 = torch.einsum("ij,jk,jk->i", self.A, X, X)
+        row, col = self.A  # row holds source nodes, col holds target nodes
 
-        energies = 1 / 2 * (res1 - 2 * res2 + res3)
+        # Gather X for source and target nodes
+        X_i = X[row]
+        X_j = X[col]
+
+        # Compute the L2 norm squared of the differences
+        diff = X_i - X_j
+        l2_norms_squared = 1 / 2 * (diff**2).sum(dim=-1)
+
+        # Initialize the result tensor with zeros for each node
+        energies = torch.zeros(X.size(0), device=X.device)
+
+        # Use index_add to sum the L2 norms for each node
+        energies = energies.index_add(0, row, l2_norms_squared)
 
         if self.norm_energy:
-            # energies = (
-            #    energies * self.energy_normalization(X.shape[1]).squeeze()
-            # )
             energies *= self.energy_normalization(X.shape[1]).squeeze()
 
         # (because of numerical errors ??) some energies are an epsilon negative. Clamp those.
@@ -131,12 +140,31 @@ class Entropy:
         self, X, temperature: float, scale_by_temperature: bool = False
     ):
         P_bar = self.Pbar(X, temperature)
-        res1 = torch.einsum("ij,ik,i->ik", self.A, X, P_bar)
-        res2 = torch.einsum("ij,ik,j->ik", self.A, X, P_bar)
-        res3 = torch.einsum("ij,jk,i->ik", self.A, X, P_bar)
-        res4 = torch.einsum("ij,jk,j->ik", self.A, X, P_bar)
 
-        result = res1 + res2 - res3 - res4
+        # self.A is the edge index in COO format
+        row, col = self.A
+
+        # Gather P and X for source and target nodes
+        P_i = P_bar[row]
+        P_j = P_bar[col]
+        X_i = X[row]
+        X_j = X[col]
+
+        # Compute the term (P_j + P_i)
+        P_sum = P_i + P_j
+
+        # Compute the term (X_i - X_j)
+        X_diff = X_i - X_j
+
+        # Multiply the terms
+        term = P_sum[:, None] * X_diff
+
+        # Initialize the result tensor
+        result = torch.zeros_like(X)
+
+        # Use scatter_add to sum the contributions for each node
+        result = result.index_add_(0, row, term)
+
         if scale_by_temperature:
             result = (1 / temperature) * result
 
