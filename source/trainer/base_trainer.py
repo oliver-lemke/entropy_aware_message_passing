@@ -1,6 +1,7 @@
 """
 File is used for training the actual model.
 """
+
 import json
 import os
 import random
@@ -227,8 +228,7 @@ class BaseTrainer:
 
     def _log(self, data, pred, loss, int_reps, log_data):
         # ENtropy Object
-        A = torch_geometric.utils.to_dense_adj(data.edge_index).squeeze()
-        entropy = Entropy(A=A)
+        entropy = Entropy(A=data.edge_index, norm_energy=True, norm_dist=False)
         # metrics
         self.model.eval()
         with torch.no_grad():
@@ -264,17 +264,17 @@ class BaseTrainer:
                     energies.append(energy_metric)
                     entropies.append(entropy_metric)
                     if isinstance(layer, int):
-                        total_metrics[
-                            f"energy_over_epoch/layer{layer:04d}"
-                        ] = energy_metric
-                        total_metrics[
-                            f"entropy_over_epoch/layer{layer:04d}"
-                        ] = entropy_metric
+                        total_metrics[f"energy_over_epoch/layer{layer:04d}"] = (
+                            energy_metric
+                        )
+                        total_metrics[f"entropy_over_epoch/layer{layer:04d}"] = (
+                            entropy_metric
+                        )
                     else:
                         total_metrics[f"energy_over_epoch/layer{layer}"] = energy_metric
-                        total_metrics[
-                            f"entropy_over_epoch/layer{layer}"
-                        ] = entropy_metric
+                        total_metrics[f"entropy_over_epoch/layer{layer}"] = (
+                            entropy_metric
+                        )
 
                 # plot over layers
                 table_data = [

@@ -18,10 +18,10 @@ class EntropicLayer(nn.Module):
 
     def forward(self, x, edge_index, weight, temperature, entropy):
         x = self.gcn_conv(x, edge_index)
-        with torch.no_grad():
-            entropy_gradient = entropy.gradient_entropy(
-                x, temperature, scale_by_temperature=self.scale_by_temperature
-            )
+        # with torch.no_grad():
+        entropy_gradient = entropy.gradient_entropy(
+            x, temperature, scale_by_temperature=self.scale_by_temperature
+        )
         x = x + weight * entropy_gradient
         return x
 
@@ -78,9 +78,8 @@ class EntropicGCN(nn.Module):
             data (_type_): _description_
         """
 
-        self.A = tg.utils.to_dense_adj(data.edge_index).squeeze()
         self.entropy = physics.Entropy(
-            self.A, norm_energy=self.norm_energy, norm_dist=self.norm_dist
+            data.edge_index, norm_energy=self.norm_energy, norm_dist=self.norm_dist
         )
 
         x, edge_index = data.x, data.edge_index

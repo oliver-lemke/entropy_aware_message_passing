@@ -1,6 +1,7 @@
 """
 File is used for testing the actual model.
 """
+
 import os
 
 import torch
@@ -10,7 +11,7 @@ from datasets import load_data
 from models import ModelFactory
 from physics.physics import Entropy
 from torch_geometric.data import Data
-from torch_geometric.utils import add_self_loops, to_dense_adj
+from torch_geometric.utils import add_self_loops
 from utils.config import Config
 from utils.logs import Logger
 
@@ -106,12 +107,10 @@ class BaseTester:
         self.input_dim, self.output_dim = 1, 64
 
         # initialize Entropy class
-        A = to_dense_adj(self.dataset.edge_index).squeeze()
-
         # TODO: load these bools from config
         self.entropy = Entropy(
-            A=A,
-            norm_energy=False,
+            A=self.dataset.edge_index,
+            norm_energy=True,
             norm_dist=False,
         )
 
