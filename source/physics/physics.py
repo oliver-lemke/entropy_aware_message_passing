@@ -67,7 +67,6 @@ class Entropy:
         Compute normalization for each nodes dirichlet energy.
         """
 
-
         # compute normalization
         norm = 1 / torch.sqrt(self.D * dim + 1e-15)
 
@@ -88,7 +87,7 @@ class Entropy:
 
         # Compute the L2 norm squared of the differences
         diff = X_i - X_j
-        l2_norms_squared = 1 / 2 * (diff**2).sum(dim=-1)
+        l2_norms_squared = 1 / 2 * (diff ** 2).sum(dim=-1)
 
         # Initialize the result tensor with zeros for each node
         energies = torch.zeros(X.size(0), device=X.device)
@@ -137,7 +136,7 @@ class Entropy:
         return P_bar
 
     def gradient_entropy(
-        self, X, temperature: float, scale_by_temperature: bool = False
+            self, X, temperature: float, scale_by_temperature: bool = False
     ):
         P_bar = self.Pbar(X, temperature)
 
