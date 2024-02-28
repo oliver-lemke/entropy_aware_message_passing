@@ -1,6 +1,7 @@
 """
 File is used for training the actual model.
 """
+
 import json
 import os
 import random
@@ -152,17 +153,17 @@ class MultiGraphTrainer(BaseTrainer):
                     energies.append(energy_metric)
                     entropies.append(entropy_metric)
                     if isinstance(layer, int):
-                        total_metrics[
-                            f"energy_over_epoch/layer{layer:04d}"
-                        ] = energy_metric
-                        total_metrics[
-                            f"entropy_over_epoch/layer{layer:04d}"
-                        ] = entropy_metric
+                        total_metrics[f"energy_over_epoch/layer{layer:04d}"] = (
+                            energy_metric
+                        )
+                        total_metrics[f"entropy_over_epoch/layer{layer:04d}"] = (
+                            entropy_metric
+                        )
                     else:
                         total_metrics[f"energy_over_epoch/layer{layer}"] = energy_metric
-                        total_metrics[
-                            f"entropy_over_epoch/layer{layer}"
-                        ] = entropy_metric
+                        total_metrics[f"entropy_over_epoch/layer{layer}"] = (
+                            entropy_metric
+                        )
 
                 # plot over layers
                 table_data = [
